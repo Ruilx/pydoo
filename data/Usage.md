@@ -159,7 +159,7 @@ operators:
 * `'/<func>'`: use functions
   * `col/STR_TO_DATE(*, '%Y-%m-%d')` `STR_TO_DATE(col, '%Y-%m-%d')`
   * `col/FROM_UNIXTIME/DATE` `DATE(FROM_UNIXTIME(col))`
-* `->{TYPE}` cast datetype
+* `->{TYPE}` cast datatype
   * `col->Integer` `CAST(col AS Integer)`
 * `colA|colB` multiple columns with same condition
   * `'colA|colB?': 'Alice'` `colA like '%Alice%' Or colB like '%Alice%'`
@@ -388,6 +388,3 @@ state.soft_delete(cond: WherePart, delete_field: str, delete_type: str = 'tinyin
 ```
 
 # Cache设定
-
-
-

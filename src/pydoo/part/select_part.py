@@ -1,19 +1,30 @@
 # -*- coding: utf-8 -*-
 import weakref
 
-from src.pydoo.part.part_base import PartBase, PartContainerBase
+from .field_part import FieldPart
+from ..exception import SQLSyntaxError, SQLPartNotValidError
+from ..part.part_base import PartBase, PartContainerBase
 
 
-class Field(PartBase):
-    def __init__(self, expression: str, alias: str = None):
+class Field(FieldPart):
+    def __init__(self):
         super().__init__()
-        self.expression = expression
+        self.alias: str = ""
+
+    def set_alias(self, alias: str):
         self.alias = alias
 
-    def __str__(self):
+    def to_sql(self, title="", indent=4):
+        if title.__len__() > 0:
+            return SQLSyntaxError(f"{title} is not supported.")
+        if not self._is_valid():
+            raise SQLPartNotValidError(f"{self} is not valid.")
         if self.alias is not None:
             return f"{self.expression} AS {self.alias}"
         return self.expression
+
+    def __str__(self):
+        return self.to_sql("", 0)
 
 
 class SelectPart(PartContainerBase):

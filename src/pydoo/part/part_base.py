@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
-from typing import Any
+from abc import ABCMeta, abstractmethod
 
 
-class PartBase(object):
+class PartBase(object, metaclass=ABCMeta):
     def __init__(self):
-        ...
+        self._valid = False
 
-    def to_sql(self, title="", indent=4):
+    @abstractmethod
+    def to_sql(self, title="", indent=4) -> str:
         raise NotImplementedError()
+
+    def _is_valid(self):
+        return self._valid
 
 
 class PartContainerBase(PartBase):

@@ -16,7 +16,7 @@ class Field(FieldPart):
 
     def to_sql(self, title="", indent=4):
         if title.__len__() > 0:
-            return SQLSyntaxError(f"{title} is not supported.")
+            return SQLSyntaxError("title is not supported.")
         if not self._is_valid():
             raise SQLPartNotValidError(f"{self} is not valid.")
         if self.alias is not None:

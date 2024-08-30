@@ -12,7 +12,7 @@ class FieldPart(PartBase):
         self.expression = expression
         self._valid = True
 
-    def to_sql(self, title="", indent=4):
+    def to_sql(self, title="", indent=0):
         if title.__len__() > 0:
             return SQLSyntaxError(f"{title} is not supported.")
         if not self._is_valid():

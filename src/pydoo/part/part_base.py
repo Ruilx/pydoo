@@ -7,7 +7,7 @@ class PartBase(object, metaclass=ABCMeta):
         self._valid = False
 
     @abstractmethod
-    def to_sql(self, title="", indent=4) -> str:
+    def to_sql(self, title="", indent=0) -> str:
         raise NotImplementedError()
 
     def _is_valid(self):
@@ -26,13 +26,19 @@ class PartContainerBase(PartBase):
     def add_part(self, part: str | PartBase):
         self.parts.append(part)
 
-    def to_sql(self, header="", indent=4):
+    def cal_sep(self, indent: int):
+        if indent == 0:
+            self.sep = self.sep + " "
+        else:
+            self.sep = self.sep + "\n"
+
+    def to_sql(self, header="", indent=0):
         strings = []
-        for i, part in enumerate(self.parts):
+        for part in self.parts:
             if isinstance(part, PartBase):
                 strings.append(part.to_sql("", indent=indent))
             elif isinstance(part, str):
-                strings.append(part)
+                strings.append("{indent}{part}".format(indent=' ' * indent, part=part))
             else:
-                strings.append(str(part))
-        return self.sep.join(strings)
+                strings.append("{indent}{part}".format(indent=' ' * indent, part=str(part)))
+        return "{header}{sep}{strings}".format(header=header, sep=' ' if indent == 0 else '\n', strings=self.sep.join(strings)).strip()

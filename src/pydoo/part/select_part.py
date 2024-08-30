@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-import weakref
 
-from .field_part import FieldPart
-from ..exception import SQLSyntaxError, SQLPartNotValidError
-from ..part.part_base import PartBase, PartContainerBase
+from src.pydoo.part.field_part import FieldPart
+from src.pydoo.exception import SQLSyntaxError, SQLPartNotValidError
+from src.pydoo.part.part_base import PartContainerBase
 
 
 class Field(FieldPart):
@@ -30,11 +29,24 @@ class Field(FieldPart):
 class SelectPart(PartContainerBase):
     def __init__(self):
         super().__init__()
-        self.fields: list[Field | str] = weakref.ref(self.parts)
+        self.fields: list[str | Field] = self.parts
         self.sep = ","
+        self.distinct = False
 
     def add_field(self, field: Field | str):
         self.add_part(field)
 
-    def to_sql(self, title="Select\n", indent=4):
+    def set_distinct(self, b: bool):
+        self.distinct = b
+
+    def to_sql(self, title="Select", indent=0):
+        self.cal_sep(indent)
         return super().to_sql(header=title, indent=indent)
+
+
+if __name__ == "__main__":
+    s = SelectPart()
+    s.set_distinct(True)
+    s.add_field("id")
+    s.add_field("name")
+    print(s.to_sql(indent=0))

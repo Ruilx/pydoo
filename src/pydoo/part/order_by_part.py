@@ -55,7 +55,6 @@ class OrderByPart(PartContainerBase):
             self.add_part(order)
 
     def to_sql(self, title="Order By", indent=4):
-        self.cal_sep(indent)
         return super().to_sql(header=title, indent=indent)
 
 

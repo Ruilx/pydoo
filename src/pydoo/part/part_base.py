@@ -33,6 +33,7 @@ class PartContainerBase(PartBase):
             self.sep = self.sep + "\n"
 
     def to_sql(self, header="", indent=0):
+        self.cal_sep(indent)
         strings = []
         for part in self.parts:
             if isinstance(part, PartBase):

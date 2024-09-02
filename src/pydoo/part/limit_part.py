@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from ..exception import SQLSyntaxError
-from ..part.part_base import PartBase
+from src.pydoo.exception import SQLSyntaxError
+from src.pydoo.part.part_base import PartBase
 
 
 class LimitPart(PartBase):
@@ -31,3 +31,15 @@ class LimitPart(PartBase):
 
     def set_offset(self, offset: int):
         self.offset = LimitPart._check_offset(offset)
+
+    def to_sql(self, title="Limit", indent=0) -> str:
+        if not self._is_valid():
+            raise SQLSyntaxError("LimitPart is not valid")
+        return f"{title} {self.limit}" if self.offset == 0 else f"{title} {self.offset}, {self.limit}"
+
+
+if __name__ == "__main__":
+    limit = LimitPart()
+    limit.set_limit(10)
+    limit.set_offset(20)
+    print(limit.to_sql())

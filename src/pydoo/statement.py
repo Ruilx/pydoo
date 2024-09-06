@@ -21,3 +21,4 @@ class Statement(object):
             self.part['from'].add_table(table)
 
     def alias(self, name: str):
+        ...

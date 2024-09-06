@@ -30,7 +30,8 @@ class WhereAnd(PartContainerBase):
                 else:
                     strings.append(part.to_sql("", indent=indent))
             else:
-                raise Exception("Invalid Where Expression")
+                strings.append("{indent}{part}".format(indent=' ' * indent, part=str(part)))
+                # raise Exception("Invalid Where Expression")
         return "{title}{sep}{strings}".format(title=title, sep=' ' if indent == 0 else '\n', strings=self.sep.join(strings)).strip()
 
     def __len__(self):

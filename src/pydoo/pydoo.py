@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
-from typing import Union
 
 from .api.db_api import Connection
+from .part.from_part import FromPart
+from .part.group_by_part import GroupByPart
+from .part.limit_part import LimitPart
+from .part.order_by_part import OrderByPart
+from .part.select_part import SelectPart
+from .part.where_part import WhereAnd
 
 
 class Pydoo(object):
@@ -18,14 +23,6 @@ class Pydoo(object):
         self.debug_mode = False
 
         self.error = None
-
-        self.part = {
-            "table": "",
-            "field": [],
-            "where": [],
-            "order": "",
-            "limit": "",
-        }
 
 
     def query(self, query: str, args=None):

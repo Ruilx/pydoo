@@ -35,6 +35,8 @@ class LimitPart(PartBase):
     def to_sql(self, title="Limit", indent=0) -> str:
         if not self._is_valid():
             raise SQLSyntaxError("LimitPart is not valid")
+        if self.limit == 0:
+            return ""
         return f"{title} {self.limit}" if self.offset == 0 else f"{title} {self.offset}, {self.limit}"
 
 

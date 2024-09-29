@@ -59,7 +59,7 @@ class From(PartBase):
             indt = ''
 
         if isinstance(self.table, str):
-            string.append("{indent}{table}".format(indent=indt, table=self.table))
+            string.append("{indent}{table}".format(indent=indt, table="{table}{alias}".format(table=self.table, alias=f" {self.alias}" if self.alias else "")))
 
         if self.on is not None and self.on.__len__() > 0:
             string.append(self.on.to_sql("On", indent * 2 if indent > 0 else indent))
@@ -72,6 +72,10 @@ class FromPart(PartContainerBase):
         super().__init__()
         self.tables: list[str | From] = self.parts
         self.sep = ""
+
+    def __len__(self):
+        return self.tables.__len__()
+
 
     def add_table(self, table: str | From, on: WhereAnd | None = None, join_type: From.JoinType = From.JoinType.NoJoin):
         if isinstance(table, str):
@@ -99,4 +103,4 @@ if __name__ == '__main__':
     where1.add_exp(where1or)
 
     from_part.add_table("t2 g", where1, From.JoinType.LeftJoin)
-    print(from_part.to_sql("From", indent=4))
+    print(from_part.to_sql("From", indent=0))

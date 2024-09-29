@@ -26,6 +26,9 @@ class PartContainerBase(PartBase):
     def add_part(self, part: str | PartBase):
         self.parts.append(part)
 
+    def clear_part(self):
+        self.parts.clear()
+
     def cal_sep(self, indent: int):
         if indent == 0:
             self.sep = self.sep + " "

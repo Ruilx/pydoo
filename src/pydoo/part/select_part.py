@@ -27,6 +27,8 @@ class Field(FieldPart):
 
 
 class SelectPart(PartContainerBase):
+    All = '*'
+
     def __init__(self):
         super().__init__()
         self.fields: list[str | Field] = self.parts
@@ -35,6 +37,9 @@ class SelectPart(PartContainerBase):
 
     def add_field(self, field: Field | str):
         self.add_part(field)
+
+    def clear_field(self):
+        self.clear_part()
 
     def set_distinct(self, b: bool):
         self.distinct = b

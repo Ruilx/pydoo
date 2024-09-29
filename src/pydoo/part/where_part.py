@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
-import weakref
+import datetime
+from typing import Union
+
 from src.pydoo.part.field_part import FieldPart
 from src.pydoo.part.part_base import PartContainerBase
+
+ValueType = Union[str | int | float | None | datetime.datetime | datetime.date]
 
 
 class WhereAnd(PartContainerBase):

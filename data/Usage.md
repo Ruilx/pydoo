@@ -75,7 +75,7 @@ state.field(fields: list[Field]) -> Statement
 ```
 
 ```python
-state.field(field: str, distinct: bool) -> Statement
+state.field(field: str) -> Statement
 ```
 
 ```python
@@ -92,7 +92,8 @@ state.field(Select.All) -> Statement
 state.distinct(enable: bool) -> Statement
 ```
 
-```
+```python
+@deleted
 state.distinct(field: str) -> Statement
 ```
 
@@ -115,7 +116,7 @@ state.where(name: str, value: ValueType) -> Statement
 ```
 
 ```python
-state.where(cond: list[dict[str, ValueType | Closure<cond> | Statement]]) -> Statement # cond: where builder
+state.where(cond: dict[str, ValueType | Closure<cond> | Statement]) -> Statement # cond: where builder
 ```
 
 ```python
@@ -135,7 +136,7 @@ operators:
 * `,eq` `=` equal
 * `,lt` `<` less than
 * `,gt` `>` greater than
-* `,le` `<=` less than or equal
+* x 1from clickhouse_driver.dbapi import connection, cursor2​3conn = connection.Connection(**DBConf)4​5cursor = conn.cursor()6​7​8​9cursor.close()10conn.close()python
 * `,ge` `>=` greater than or equal
 * `,ne` `!=` not equal
 * `,in` `:` in set

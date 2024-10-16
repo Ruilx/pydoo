@@ -11,7 +11,7 @@ from src.pydoo.part.where_part import WhereAnd, ValueType
 
 
 class Statement(object):
-    def __init__(self, table: str | None = None):
+    def __init__(self, table: str | None = None, executor: Executor | None = None):
         self.part = {
             "select": SelectPart(),
             "from": FromPart(),
@@ -24,14 +24,16 @@ class Statement(object):
         self.values = []
         if isinstance(table, str):
             self.part['from'].add_table(table)
+        if isinstance(executor, Executor):
+            self.executor = executor
 
-    def alias(self, name: str):
+    def alias(self, name: str) -> "Statement":
         if self.part['from'].__len__() <= 0:
             raise ValueError('Statement has no table')
         self.part['from'].set_table_alias(0, name)
         return self
 
-    def field(self, fields: str | list[str | FieldPart] | Literal[SelectPart.All]):
+    def field(self, fields: str | list[str | FieldPart] | Literal[SelectPart.All]) -> "Statement":
         """
         Fields in select body
         Usage:
@@ -54,11 +56,11 @@ class Statement(object):
             raise ValueError(f"Invalid field type: {type(fields)}")
         return self
 
-    def distinct(self, enable: bool):
+    def distinct(self, enable: bool) -> "Statement":
         self.part['select'].set_distinct(enable)
         return self
 
-    def where(self, name: str | WhereAnd | dict[str, ValueType | "Statement" | list] | list[tuple[str, str, ValueType] | tuple[str, ValueType]], op: str | None = None, value: ValueType | None = None):
+    def where(self, name: str | WhereAnd | dict[str, ValueType | "Statement" | list] | list[tuple[str, str, ValueType] | tuple[str, ValueType]], op: str | None = None, value: ValueType | None = None) -> Statement:
         if isinstance(name, str):
             if op is None and value is None:
                 # state.where(condstr: str)
@@ -117,7 +119,7 @@ class Statement(object):
                     raise ValueError(f"Invalid where condition type: '{cond}'")
         return self
 
-    def x_join(self, join_type: From.JoinType, name: str | "Statement", alias: str, on_statement: str | WhereAnd | None):
+    def x_join(self, join_type: From.JoinType, name: str | "Statement", alias: str, on_statement: str | WhereAnd | None) -> "Statement":
         if isinstance(on_statement, str):
             i_on_statement = WhereAnd()
             i_on_statement.add_exp(on_statement)
@@ -135,22 +137,22 @@ class Statement(object):
             raise ValueError(f"Invalid join table type: {type(name)}")
         return self
 
-    def inner_join(self, name: str | "Statement", alias: str, on_statement: str | WhereAnd):
+    def inner_join(self, name: str | "Statement", alias: str, on_statement: str | WhereAnd) -> "Statement":
         return self.x_join(From.JoinType.InnerJoin, name, alias, on_statement)
 
-    def left_join(self, name: str | "Statement", alias: str, on_statement: str | WhereAnd):
+    def left_join(self, name: str | "Statement", alias: str, on_statement: str | WhereAnd) -> "Statement":
         return self.x_join(From.JoinType.LeftJoin, name, alias, on_statement)
 
-    def right_join(self, name: str | "Statement", alias: str, on_statement: str | WhereAnd):
+    def right_join(self, name: str | "Statement", alias: str, on_statement: str | WhereAnd) -> "Statement":
         return self.x_join(From.JoinType.RightJoin, name, alias, on_statement)
 
-    def full_join(self, name: str | "Statement", alias: str, on_statement: str | WhereAnd):
+    def full_join(self, name: str | "Statement", alias: str, on_statement: str | WhereAnd) -> "Statement":
         return self.x_join(From.JoinType.Join, name, alias, on_statement)
 
-    def cross_join(self, name: str | "Statement", alias: str):
+    def cross_join(self, name: str | "Statement", alias: str) -> "Statement":
         return self.x_join(From.JoinType.CrossJoin, name, alias, None)
 
-    def group_by(self, fields: str | list[str]):
+    def group_by(self, fields: str | list[str]) -> "Statement":
         if isinstance(fields, str):
             self.part['group_by'].add_group(fields)
         elif isinstance(fields, list):
@@ -160,28 +162,30 @@ class Statement(object):
             raise ValueError(f"Invalid group by field type: {type(fields)}")
         return self
 
-    def order_by(self, fields: str, order_type: str = 'asc'):
+    def order_by(self, fields: str, order_type: str = 'asc') -> "Statement":
         self.part['order_by'].add_order(fields, order_type)
+        return self
 
-    def having(self, cond: str):
+    def having(self, cond: str) -> "Statement":
         self.part['having'].add_exp(cond)
+        return self
 
-    def limit(self, rows: int, offset: int = 0):
+    def limit(self, rows: int, offset: int = 0) -> "Statement":
         self.part['limit'].set_limit(rows)
         if offset > 0:
             self.offset(offset)
         return self
 
-    def offset(self, rows: int):
+    def offset(self, rows: int) -> "Statement":
         self.part['limit'].set_offset(rows)
         return self
 
-    def page(self, page_index: int, page_size: int):
+    def page(self, page_index: int, page_size: int) -> "Statement":
         self.part['limit'].set_limit(page_size)
         self.part['limit'].set_offset((page_index - 1) * page_size)
         return self
 
-    def lock(self, b: bool | str):
+    def lock(self, b: bool | str) -> "Statement":
         if isinstance(lock, bool):
             if lock:
                 self.part['lock'] = "for update"
@@ -195,6 +199,14 @@ class Statement(object):
         if fields is not None:
             self.part['select'].clear_field()
             self.part['select'].add_field(fields)
-        return self.execute()
+        return self._execute()
 
-    def
+    def find(self, fields: str | list[str] | None = None) -> Result:
+        if fields is not None:
+            self.part['select'].clear_field()
+            self.part['select'].add_field(fields)
+        self.part['limit'].set_limit(1)
+        return self._execute()
+
+    def _execute(self) -> Result:
+        ...

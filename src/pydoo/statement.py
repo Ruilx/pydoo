@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from typing import Literal
 
+from src.pydoo.executor import Executor
 from src.pydoo.part.field_part import FieldPart
 from src.pydoo.part.from_part import FromPart, From
 from src.pydoo.part.group_by_part import GroupByPart

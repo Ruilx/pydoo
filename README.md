@@ -8,7 +8,7 @@ name idea from [Medoo](https://github.com/catfan/Medoo) for PHP
 
 ## Features
 
-* Lightweight - Portable with a simple module or source file.
+* Lightweight - Portable with a simple module or source files.
 * Easy - Easy to learn and use structure queries.
 * Powerful - supports various common SQL queries, DDL and prevents SQL injections.
 * Compatible - Supports MySQL, MSSQL, SQLite and more SQL engines.
@@ -61,8 +61,7 @@ MySQLConf = {
 }
 
 connection = pymysql.connect(**MySQLConf)
-cursor_generator = connection.cursor
-doo = Pydoo(cursor_generator)
+doo = Pydoo(connection)
 
 # SQL:
 # Select col_a, col_b from TableA where col_a = 1 and col_b = 'ABC' limit 1

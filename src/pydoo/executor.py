@@ -13,6 +13,9 @@ class Executor(object):
 
         self.check_conn()
 
+    def connection(self):
+        return self.conn
+
     def check_conn(self):
         if not hasattr(self.conn, "cursor"):
             raise Exception("Connection object must have a cursor method.")

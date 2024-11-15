@@ -14,5 +14,5 @@ class ResultParser(object):
         return cursor.fetchall()
 
     @staticmethod
-    def result_all_as_dict(cursor):
-        return cursor.fetchall_as_dict()
+    def result_chunk(cursor, size):
+        return cursor.fetchmany(size=size)

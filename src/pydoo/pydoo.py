@@ -3,6 +3,7 @@ import enum
 
 from .api.db_api import Connection
 from .executor import Executor
+from .result_parser import ResultParser
 from .statement import Statement
 
 class Pydoo(object):
@@ -23,7 +24,11 @@ class Pydoo(object):
         FETCH_CHUNK = 4
 
     ResultParse = {
-        Pydoo.ResultType.FETCH_CURSOR_RAW: ,
+        ResultType.FETCH_CURSOR_RAW: ResultParser.result_raw,
+        ResultType.FETCH_ITERATE: ResultParser.result_iterate,
+        ResultType.FETCH_ALL: ResultParser.result_all,
+        ResultType.FETCH_ALL_AS_DICT: ResultParser.result_all,
+        ResultType.FETCH_CHUNK: ResultParser.result_chunk,
     }
 
     def __init__(self, conn: Connection):
@@ -43,10 +48,14 @@ class Pydoo(object):
         self.error = None
 
     def query(self, query: str, args=None):
-        return self.executor.query(query, args)
+        if self.result_type in (self.ResultType.FETCH_ALL_AS_DICT, ):
+            self.executor.connection().cursorclass = self.executor.connection().DictCursor
+        return self.ResultParse[self.result_type](self.executor.query(query, args))
 
     def execute(self, query: str, args=None):
-        return self.executor.execute(query, args)
+        if self.result_type in (self.ResultType.FETCH_ALL_AS_DICT, ):
+            self.executor.connection().cursorclass = self.executor.connection().DictCursor
+        return self.ResultParse[self.result_type](self.executor.execute(query, args))
 
     def table(self, table: str):
         return Statement(table, self.executor)

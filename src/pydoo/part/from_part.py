@@ -6,7 +6,6 @@ from src.pydoo.part.where_part import WhereAnd, WhereOr
 
 
 class From(PartBase):
-
     class JoinType(Enum):
         NoJoin = ""
         Join = "Join"
@@ -49,20 +48,21 @@ class From(PartBase):
 
     def to_sql(self, title: str = "", indent=4) -> str:
         string = []
-        indt = " " * indent
+        indt = 1
 
         if title:
-            string.append("{indent}{title}".format(indent=indt, title=title))
-            indt = ''
+            string.append("{indent}{title}".format(indent=' ' * indt * indent, title=title))
+            indt = 0
         elif self.join_type != From.JoinType.NoJoin:
-            string.append("{indent}{type}".format(indent=indt, type=self.join_type.value))
-            indt = ''
+            string.append("{indent}{type}".format(indent=' ' * indt * indent, type=self.join_type.value))
+            indt = 0
 
         if isinstance(self.table, str):
-            string.append("{indent}{table}".format(indent=indt, table="{table}{alias}".format(table=self.table, alias=f" {self.alias}" if self.alias else "")))
+            string.append("{indent}{table}".format(indent=' ' * indt * indent, table="{table}{alias}".format(table=self.table,
+                                                                                              alias=f" {self.alias}" if self.alias else "")))
 
         if self.on is not None and self.on.__len__() > 0:
-            string.append(self.on.to_sql("On", indent * 2 if indent > 0 else indent))
+            string.append(self.on.to_sql("On", (indt+1) * indent if indent > 0 else indent))
 
         return ' '.join(string)
 
@@ -75,7 +75,6 @@ class FromPart(PartContainerBase):
 
     def __len__(self):
         return self.tables.__len__()
-
 
     def add_table(self, table: str | From, on: WhereAnd | None = None, join_type: From.JoinType = From.JoinType.NoJoin):
         if isinstance(table, str):
@@ -103,4 +102,4 @@ if __name__ == '__main__':
     where1.add_exp(where1or)
 
     from_part.add_table("t2 g", where1, From.JoinType.LeftJoin)
-    print(from_part.to_sql("From", indent=0))
+    print(from_part.to_sql("From", indent=4))

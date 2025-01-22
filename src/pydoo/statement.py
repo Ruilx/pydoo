@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import Literal
+from typing import Literal, Union
 
 from src.pydoo.executor import Executor
 from src.pydoo.part.field_part import FieldPart
@@ -9,6 +9,10 @@ from src.pydoo.part.limit_part import LimitPart
 from src.pydoo.part.order_by_part import OrderByPart
 from src.pydoo.part.select_part import SelectPart
 from src.pydoo.part.where_part import WhereAnd, ValueType
+
+
+class Result(object):
+    ...
 
 
 class Statement(object):
@@ -61,7 +65,7 @@ class Statement(object):
         self.part['select'].set_distinct(enable)
         return self
 
-    def where(self, name: str | WhereAnd | dict[str, ValueType | "Statement" | list] | list[tuple[str, str, ValueType] | tuple[str, ValueType]], op: str | None = None, value: ValueType | None = None) -> Statement:
+    def where(self, name: str | WhereAnd | dict[str, ValueType | "Statement" | list] | list[tuple[str, str, ValueType] | tuple[str, ValueType]], op: str | None = None, value: ValueType | None = None) -> "Statement":
         if isinstance(name, str):
             if op is None and value is None:
                 # state.where(condstr: str)
@@ -120,7 +124,7 @@ class Statement(object):
                     raise ValueError(f"Invalid where condition type: '{cond}'")
         return self
 
-    def x_join(self, join_type: From.JoinType, name: str | "Statement", alias: str, on_statement: str | WhereAnd | None) -> "Statement":
+    def x_join(self, join_type: From.JoinType, name: Union[str, "Statement"], alias: str, on_statement: str | WhereAnd | None) -> "Statement":
         if isinstance(on_statement, str):
             i_on_statement = WhereAnd()
             i_on_statement.add_exp(on_statement)
@@ -138,19 +142,19 @@ class Statement(object):
             raise ValueError(f"Invalid join table type: {type(name)}")
         return self
 
-    def inner_join(self, name: str | "Statement", alias: str, on_statement: str | WhereAnd) -> "Statement":
+    def inner_join(self, name: Union[str, "Statement"], alias: str, on_statement: str | WhereAnd) -> "Statement":
         return self.x_join(From.JoinType.InnerJoin, name, alias, on_statement)
 
-    def left_join(self, name: str | "Statement", alias: str, on_statement: str | WhereAnd) -> "Statement":
+    def left_join(self, name: Union[str, "Statement"], alias: str, on_statement: str | WhereAnd) -> "Statement":
         return self.x_join(From.JoinType.LeftJoin, name, alias, on_statement)
 
-    def right_join(self, name: str | "Statement", alias: str, on_statement: str | WhereAnd) -> "Statement":
+    def right_join(self, name: Union[str, "Statement"], alias: str, on_statement: str | WhereAnd) -> "Statement":
         return self.x_join(From.JoinType.RightJoin, name, alias, on_statement)
 
-    def full_join(self, name: str | "Statement", alias: str, on_statement: str | WhereAnd) -> "Statement":
+    def full_join(self, name: Union[str, "Statement"], alias: str, on_statement: str | WhereAnd) -> "Statement":
         return self.x_join(From.JoinType.Join, name, alias, on_statement)
 
-    def cross_join(self, name: str | "Statement", alias: str) -> "Statement":
+    def cross_join(self, name: Union[str, "Statement"], alias: str) -> "Statement":
         return self.x_join(From.JoinType.CrossJoin, name, alias, None)
 
     def group_by(self, fields: str | list[str]) -> "Statement":

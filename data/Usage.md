@@ -136,7 +136,7 @@ operators:
 * `,eq` `=` equal
 * `,lt` `<` less than
 * `,gt` `>` greater than
-* x 1from clickhouse_driver.dbapi import connection, cursor2​3conn = connection.Connection(**DBConf)4​5cursor = conn.cursor()6​7​8​9cursor.close()10conn.close()python
+* `,le` `<=` less than or equal
 * `,ge` `>=` greater than or equal
 * `,ne` `!=` not equal
 * `,in` `:` in set

@@ -6,8 +6,8 @@ class HavingPart(WhereAnd):
     def __init__(self):
         super().__init__()
 
-    def to_sql(self, title="Having", indent=0) -> str:
-        return super().to_sql(title, indent)
+    def to_sql(self, title="Having", indent=0, incr=0) -> str:
+        return super().to_sql(title, indent, incr)
 
 
 if __name__ == '__main__':

@@ -46,23 +46,21 @@ class From(PartBase):
     def set_join_type(self, join_type: JoinType):
         self.join_type = join_type
 
-    def to_sql(self, title: str = "", indent=4) -> str:
+    def to_sql(self, title: str = "", indent=4, incr=0) -> str:
         string = []
-        indt = 1
 
         if title:
-            string.append("{indent}{title}".format(indent=' ' * indt * indent, title=title))
-            indt = 0
+            string.append("{incr}{indent}{title}".format(incr=' ' * incr, indent=' ' * indent, title=title))
+            incr = 0
         elif self.join_type != From.JoinType.NoJoin:
-            string.append("{indent}{type}".format(indent=' ' * indt * indent, type=self.join_type.value))
-            indt = 0
+            string.append("{incr}{indent}{type}".format(incr=' ' * incr, indent=' ' * indent, type=self.join_type.value))
+            incr = 0
 
         if isinstance(self.table, str):
-            string.append("{indent}{table}".format(indent=' ' * indt * indent, table="{table}{alias}".format(table=self.table,
-                                                                                              alias=f" {self.alias}" if self.alias else "")))
+            string.append("{indent}{table}".format(indent=' ' * indent, table="{table}{alias}".format(table=self.table, alias=f" {self.alias}" if self.alias else "")))
 
         if self.on is not None and self.on.__len__() > 0:
-            string.append(self.on.to_sql("On", (indt+1) * indent if indent > 0 else indent))
+            string.append(self.on.to_sql("On", indent if indent > 0 else indent, incr + 4))
 
         return ' '.join(string)
 
@@ -102,4 +100,4 @@ if __name__ == '__main__':
     where1.add_exp(where1or)
 
     from_part.add_table("t2 g", where1, From.JoinType.LeftJoin)
-    print(from_part.to_sql("From", indent=4))
+    print(from_part.to_sql("From", indent=0))

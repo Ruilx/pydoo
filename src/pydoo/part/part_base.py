@@ -7,7 +7,7 @@ class PartBase(object, metaclass=ABCMeta):
         self._valid = False
 
     @abstractmethod
-    def to_sql(self, title="", indent=0) -> str:
+    def to_sql(self, title="", indent=0, incr=0) -> str:
         raise NotImplementedError()
 
     def _is_valid(self):
@@ -29,20 +29,20 @@ class PartContainerBase(PartBase):
     def clear_part(self):
         self.parts.clear()
 
-    def cal_sep(self, indent: int):
+    def cal_sep(self, indent: int, incr = 0):
         if indent == 0:
             self.sep = self.sep + " "
         else:
             self.sep = self.sep + "\n"
 
-    def to_sql(self, header="", indent=0):
+    def to_sql(self, header="", indent=0, incr=0):
         self.cal_sep(indent)
         strings = []
         for part in self.parts:
             if isinstance(part, PartBase):
                 strings.append(part.to_sql("", indent=indent))
             elif isinstance(part, str):
-                strings.append("{indent}{part}".format(indent=' ' * indent, part=part))
+                strings.append("{incr}{indent}{part}".format(incr=' ' * incr, indent=' ' * indent, part=part))
             else:
-                strings.append("{indent}{part}".format(indent=' ' * indent, part=str(part)))
+                strings.append("{incr}{indent}{part}".format(incr=' ' * incr, indent=' ' * indent, part=str(part)))
         return "{header}{sep}{strings}".format(header=header, sep=' ' if indent == 0 else '\n', strings=self.sep.join(strings)).strip()

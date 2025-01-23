@@ -17,8 +17,8 @@ class GroupByPart(PartContainerBase):
         else:
             self.add_part(group)
 
-    def to_sql(self, title="Group By", indent=0):
-        return super().to_sql(title, indent)
+    def to_sql(self, title="Group By", indent=0, incr=0):
+        return super().to_sql(title, indent, incr)
 
 
 if __name__ == '__main__':

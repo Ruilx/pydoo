@@ -53,8 +53,8 @@ class OrderByPart(PartContainerBase):
         else:
             self.add_part(order)
 
-    def to_sql(self, title="Order By", indent=4):
-        return super().to_sql(header=title, indent=indent)
+    def to_sql(self, title="Order By", indent=4, incr=0):
+        return super().to_sql(header=title, indent=indent, incr=incr)
 
 
 if __name__ == "__main__":

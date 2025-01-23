@@ -32,12 +32,12 @@ class LimitPart(PartBase):
     def set_offset(self, offset: int):
         self.offset = LimitPart._check_offset(offset)
 
-    def to_sql(self, title="Limit", indent=0) -> str:
+    def to_sql(self, title="Limit", indent=0, incr=0) -> str:
         if not self._is_valid():
             raise SQLSyntaxError("LimitPart is not valid")
         if self.limit == 0:
             return ""
-        return f"{title} {self.limit}" if self.offset == 0 else f"{title} {self.offset}, {self.limit}"
+        return f"{' ' * incr}{title} {self.limit}" if self.offset == 0 else f"{' ' * incr}{title} {self.offset}, {self.limit}"
 
 
 if __name__ == "__main__":

@@ -44,8 +44,8 @@ class SelectPart(PartContainerBase):
     def set_distinct(self, b: bool):
         self.distinct = b
 
-    def to_sql(self, title="Select", indent=0):
-        return super().to_sql(header=title, indent=indent)
+    def to_sql(self, title="Select", indent=0, incr=0):
+        return super().to_sql(header=title, indent=indent, incr=incr)
 
 
 if __name__ == "__main__":

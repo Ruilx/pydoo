@@ -22,7 +22,7 @@ class WhereAnd(PartContainerBase):
         else:
             self.add_part(exp)
 
-    def to_sql(self, title="Where", indent=0):
+    def to_sql(self, title="Where", indent=0, incr=0):
         self.cal_sep(indent)
         strings = []
         for part in self.parts:
@@ -30,7 +30,7 @@ class WhereAnd(PartContainerBase):
                 strings.append(part.to_sql("", indent=indent))
             elif isinstance(part, PartContainerBase):
                 if part.__len__() > 1:
-                    strings.append("{indent}({sep}{indent}{indent}{content}{sep}{indent})".format(indent=' ' * indent, sep=' ' if indent == 0 else '\n', content=part.to_sql("", indent=2 * indent)))
+                    strings.append("{incr}{indent}({sep}{indent}{indent}{content}{sep}{indent})".format(incr=' ' * incr if indent > 0 else '', indent=' ' * indent, sep=' ' if indent == 0 else '\n', content=part.to_sql("", indent=2 * indent)))
                 else:
                     strings.append(part.to_sql("", indent=indent))
             else:
@@ -59,4 +59,4 @@ if __name__ == '__main__':
 
     a.add_exp(b)
 
-    print(a.to_sql(indent=0))
+    print(a.to_sql(indent=4))

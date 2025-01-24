@@ -1,16 +1,28 @@
 # -*- coding: utf-8 -*-
 
-from typing import Union
-
-Connection = Union[
-    "pymysql.connections.Connection"
-]
+import abc
 
 
-class DBAPI(object):
-    def __init__(self):
-        ...
+class DBAPI(object, metaclass=abc.ABCMeta):
+    def __init__(self, config: dict):
+        self.config = config
 
-    @staticmethod
-    def conn_factory():
-        raise NotImplementedError()
+    @abc.abstractmethod
+    def ping(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def cursor(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def begin(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def commit(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def rollback(self):
+        raise NotImplementedError

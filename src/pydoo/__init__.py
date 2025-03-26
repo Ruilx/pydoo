@@ -11,5 +11,6 @@ __license__ = "https://www.apache.org/licenses/LICENSE-2.0.html"
 __link__ = "https://github.com/ruilx/pydoo"
 
 from .pydoo import Pydoo
+from .part.select_part import SelectPart
 
-__all__ = ("Pydoo")
+__all__ = ("Pydoo", "SelectPart")

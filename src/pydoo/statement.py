@@ -21,7 +21,7 @@ class Statement(object):
             "select": SelectPart(),
             "from": FromPart(),
             "where": WhereAnd(),
-            "groupby": GroupByPart(),
+            "group": GroupByPart(),
             "order": OrderByPart(),
             "limit": LimitPart(),
             "lock": "",
@@ -38,7 +38,7 @@ class Statement(object):
         self.part['from'].set_table_alias(0, name)
         return self
 
-    def field(self, fields: str | list[str | FieldPart] | Literal[SelectPart.All]) -> "Statement":
+    def field(self, fields: Union[str, list[str | FieldPart], SelectPart.All], distinct: bool | None = None) -> "Statement":
         """
         Fields in select body
         Usage:

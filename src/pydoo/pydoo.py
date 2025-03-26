@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import enum
 
-from .api.db_api import Connection
+from .api.db_api import DBAPI as Connection
 from .executor import Executor
 from .result_parser import ResultParser
 from .statement import Statement

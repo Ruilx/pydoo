@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .api.db_api import Connection
+from .api.db_api import DBAPI as Connection
 
 
 class Executor(object):

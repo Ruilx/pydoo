@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from typing import Literal
 
 from src.pydoo.part.field_part import FieldPart
 from src.pydoo.exception import SQLSyntaxError, SQLPartNotValidError
@@ -27,7 +28,7 @@ class Field(FieldPart):
 
 
 class SelectPart(PartContainerBase):
-    All = '*'
+    All = Literal['*']
 
     def __init__(self):
         super().__init__()
@@ -45,6 +46,8 @@ class SelectPart(PartContainerBase):
         self.distinct = b
 
     def to_sql(self, title="Select", indent=0, incr=0):
+        if self.distinct:
+            title = title + " Distinct"
         return super().to_sql(header=title, indent=indent, incr=incr)
 
 

@@ -61,18 +61,18 @@ class DBAPICursor(object, metaclass=abc.ABCMeta):
     def scroll(self, value: int, mode: Literal["relative"] = "relative"):
         raise NotImplementedError
 
-    @abc.abstractmethod
     @property
+    @abc.abstractmethod
     def description(self):
         raise NotImplementedError
 
-    @abc.abstractmethod
     @property
+    @abc.abstractmethod
     def rownumber(self):
         raise NotImplementedError
 
-    @abc.abstractmethod
     @property
+    @abc.abstractmethod
     def rowcount(self):
         raise NotImplementedError
 

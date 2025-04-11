@@ -200,6 +200,10 @@ class Statement(object):
             self.part['lock'] = b
         return self
 
+    def to_sql(self) -> str:
+        # TODO: imp
+        ...
+
     def select(self, fields: str | list[str] | None = None) -> Result:
         if fields is not None:
             self.part['select'].clear_field()

@@ -3,6 +3,7 @@ import datetime
 from typing import Union
 
 from src.pydoo.part.where_part import WhereAnd, WhereOr
+from src.pydoo.statement import Statement
 
 SqlNumberType = Union[int | float]
 SqlDateTimeType = Union[datetime.date | datetime.datetime]
@@ -41,31 +42,82 @@ arrange_func = {
 
 
 def op_eq(key: str, value: SqlBaseType):
-    return f"{key} = {arrange_value(value)}"
+    return f"`{key}` = {arrange_value(value)}"
 
 
 def op_lt(key: str, value: SqlBaseType):
-    return f"{key} < {arrange_value(value)}"
+    return f"`{key}` < {arrange_value(value)}"
 
 
 def op_gt(key: str, value: SqlBaseType):
-    return f"{key} > {arrange_value(value)}"
+    return f"`{key}` > {arrange_value(value)}"
 
 
 def op_le(key: str, value: SqlBaseType):
-    return f"{key} <= {arrange_value(value)}"
+    return f"`{key}` <= {arrange_value(value)}"
 
 
 def op_ge(key: str, value: SqlBaseType):
-    return f"{key} >= {arrange_value(value)}"
+    return f"`{key}` >= {arrange_value(value)}"
 
 
 def op_ne(key: str, value: SqlBaseType):
-    return f"{key} != {arrange_value(value)}"
+    return f"`{key}` != {arrange_value(value)}"
 
 
-def op_in(key: str, value: list[SqlBaseType]):
-    return f"{key} in {arrange_value(value)}"
+def op_in(key: str, value: list[SqlBaseType] | Statement):
+    if isinstance(value, Statement):
+        return f"`{key}` In ({value.to_sql()})"
+    return f"`{key}` In {arrange_value(value)}"
+
+
+def op_like(key: str, value: str):
+    assert_value(value, str, key)
+    return f"`{key}` Like '%{value}%'"
+
+
+def op_like_prefix(key: str, value: str):
+    assert_value(value, str, key)
+    return f"`{key}` Like '{value}%'"
+
+
+def op_like_suffix(key: str, value: str):
+    assert_value(value, str, key)
+    return f"`{key}` Like '%{value}'"
+
+
+def op_not_like(key: str, value: str):
+    assert_value(value, str, key)
+    return f"`{key}` Not Like '%{value}%'"
+
+
+def op_between(key: str, value: list[SqlBaseType] | tuple[SqlBaseType, SqlBaseType]):
+    assert_value(value, (list, tuple), key)
+    if value.__len__() != 2:
+        raise ValueError(f"Invalid value type for condition '{key}': between operator need 2 samples.")
+    return f"`{key}` Between {arrange_value(value[0])} And {arrange_value(value[1])}"
+
+
+def op_not_between(key: str, value: list[SqlBaseType] | tuple[SqlBaseType, SqlBaseType]):
+    assert_value(value, (list, tuple), key)
+    if value.__len__() != 2:
+        raise ValueError(f"Invalid value type for condition '{key}': not between operator need 2 samples.")
+    return f"`{key}` Not Between {arrange_value(value[0])} And {arrange_value(value[1])}"
+
+
+def op_none(key: str, value: None = None):
+    assert_value(value, None)
+    return f"`{key}` Is None"
+
+
+def op_not_none(key: str, value: None = None):
+    assert_value(value, None)
+    return f"`{key}` Is Not None"
+
+
+def op_regexp(key: str, value: str):
+    assert_value(value, str)
+    return f"`{key}` Regexp {arrange_value(value)}"
 
 
 def where_builder(conditions: dict):

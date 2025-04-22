@@ -120,16 +120,111 @@ def op_regexp(key: str, value: str):
     return f"`{key}` Regexp {arrange_value(value)}"
 
 
-def where_builder(conditions: dict):
-    where = WhereAnd()
+"""
+op有两种设定的方式，分别是符号和英文短语（可以是缩写等），当使用符号描述的时候，可以直接在字段后面接续，比如：
+```
+{
+    "columnA=": 15
+}
+{
+    "columnA,equal": 15
+}
+```
+均表示 `columnA` = 15
+"""
+
+op_table = {
+    'eq': op_eq,
+    'equal': op_eq,
+    '=': op_eq,
+
+    'lt': op_lt,
+    'less than': op_le,
+    '<': op_lt,
+
+    'gt': op_gt,
+    'greater than': op_gt,
+    '>': op_gt,
+
+    'le': op_le,
+    'less equal': op_le,
+    '<=': op_le,
+
+    'ge': op_ge,
+    'greater equal': op_ge,
+    '>=': op_ge,
+
+    'in': op_in,
+    ':': op_in,
+
+    'like': op_like,
+    '?': op_like,
+
+    'like prefix': op_like_prefix,
+    'like p': op_like_prefix,
+    '?^': op_like_prefix,
+
+    'like suffix': op_like_suffix,
+    'like s': op_like_suffix,
+    '?$': op_like_suffix,
+
+    'not like': op_not_like,
+    'like n': op_not_like,
+    '!?': op_not_like,
+
+    'between': op_between,
+    '~': op_between,
+
+    'not_between': op_not_between,
+    '!~': op_not_between,
+
+
+
+}
+
+def key_op_depart(key_op: str):
+    status = 'key'
+    words = []
+    word = []
+    for char in key_op:
+        if status == 'key':
+            if char.isalnum():
+                word.append(char)
+            else:
+                words.append(''.join(word))
+                word = [char]
+                status = 'op'
+        elif status == 'op':
+            word.append(char)
+        else:
+            raise ValueError(f"Invalid condition: {key_op}")
+    if word:
+        words.append(''.join(word))
+    return words
+
+
+if __name__ == '__main__':
+    print(key_op_depart("id="))
+    print(key_op_depart("id,equal"))
+    print(key_op_depart("id, equal"))
+    print(key_op_depart("id , equal"))
+    print(key_op_depart("id, like prefix"))
+    print(key_op_depart("id!?"))
+    print(key_op_depart("id!="))
+
+
+
+
+def where_builder(conditions: dict, where: WhereAnd):
     if not conditions:
         return where
     for key_op, value in conditions.items():
         comma_pos = key_op.find(',')
         if comma_pos < 0:
-            if not isinstance(value, (str, int, float, datetime.date, datetime.datetime)):
+            # 未找到逗号时，词法分析
+            if not isinstance(value, SqlBaseType):
                 raise ValueError(f"Invalid value type for condition '{key_op}': {type(value)}")
-            if isinstance(value, (int, float)):
+            if isinstance(value, SqlNumberType):
                 where.add_exp(f"{key_op} = {value}")
             elif isinstance(value, datetime.date):
                 where.add_exp(f"{key_op} = '{value:%Y-%m-%d}'")
@@ -138,7 +233,16 @@ def where_builder(conditions: dict):
             else:
                 where.add_exp(f"{key_op} = '{value!s}'")
         elif comma_pos == 0:
+            # 逗号在首位，即没有字段名称，报错。
             raise ValueError(f"There is no key in condition: {key_op}")
         elif comma_pos > 0:
-            key = key_op[:comma_pos]
-            op = key_op[comma_pos + 1:]
+            # 逗号不在首位，切分字段和OP
+            field = key_op[:comma_pos].strip()
+            op = key_op[comma_pos + 1:].strip()
+            if not field:
+                raise ValueError(f"There is no field in condition: {key_op}")
+            if not op:
+                raise ValueError(f"There is no operator in condition: {key_op}")
+            if op not in op_table:
+                raise ValueError(f"Invalid operator in condition: {key_op}")
+            where.add_exp(op_table[op](field, value))

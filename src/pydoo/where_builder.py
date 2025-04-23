@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
+import enum
+import io
 from typing import Union
 
 from src.pydoo.part.where_part import WhereAnd, WhereOr
@@ -120,6 +122,39 @@ def op_regexp(key: str, value: str):
     return f"`{key}` Regexp {arrange_value(value)}"
 
 
+op_tree = {
+    '=': True,
+    '<': {
+        '': True,
+        '=': True,
+    },
+    '>': {
+        '': True,
+        '=': True,
+    },
+    '!': {
+        '': True,
+        '=': True,
+        '?': True,
+        '~': True,
+    },
+    ':': True,
+    '?': {
+        '': True,
+        '^': True,
+        '$': True,
+    },
+    '~': True,
+    '\\': True,
+    '{': True,
+    '#': True,
+    '/': True,
+    '-': {
+        '>': True,
+    },
+    '|': True
+}
+
 """
 op有两种设定的方式，分别是符号和英文短语（可以是缩写等），当使用符号描述的时候，可以直接在字段后面接续，比如：
 ```
@@ -178,32 +213,132 @@ op_table = {
     'not_between': op_not_between,
     '!~': op_not_between,
 
-
-
 }
 
-def key_op_depart(key_op: str):
-    status = 'key'
-    words = []
-    word = []
-    for char in key_op:
-        if status == 'key':
-            if char.isalnum():
-                word.append(char)
-            else:
-                words.append(''.join(word))
-                word = [char]
-                status = 'op'
-        elif status == 'op':
-            word.append(char)
+
+# def key_op_depart(key_op: str):
+#     status = 'key'
+#     words = []
+#     word = []
+#     for char in key_op:
+#         if status == 'key':
+#             if char.isalnum():
+#                 word.append(char)
+#             elif char.isspace() and not word:
+#                 continue
+#             else:
+#                 words.append(''.join(word))
+#                 if char != ',' and not char.isspace():
+#                     word = [char]
+#                 else:
+#                     word = []
+#                 status = 'op'
+#         elif status == 'op':
+#             if char.isspace() and not word:
+#                 continue
+#             word.append(char)
+#         else:
+#             raise ValueError(f"Invalid condition: {key_op}")
+#     if word:
+#         words.append(''.join(word))
+#     return words
+
+def _skip_spaces(key_op_io: io.StringIO):
+    while key_op_io.read(1).isspace():
+        ...
+    key_op_io.seek(max(key_op_io.tell() - 1, 0))
+
+
+def _get_var(key_op_io: io.StringIO):
+    buf = []
+    _skip_spaces(key_op_io)
+    while True:
+        char = key_op_io.read(1)
+        if not char:
+            return ''.join(buf)
+        if char.isalnum() or char == '_':
+            buf.append(char)
         else:
-            raise ValueError(f"Invalid condition: {key_op}")
-    if word:
-        words.append(''.join(word))
-    return words
+            key_op_io.seek(max(key_op_io.tell() - 1, 0))
+            return ''.join(buf)
+
+
+def _get_exp(key_op_io: io.StringIO):
+    buf = []
+    _skip_spaces(key_op_io)
+    while True:
+        char = key_op_io.read(1)
+        if not char:
+            return ''.join(buf)
+        if char.isalnum() or char == '_' or char == ' ':
+            buf.append(char)
+        else:
+            key_op_io.seek(max(key_op_io.tell() - 1, 0))
+            return ''.join(buf)
+
+
+def _get_sym(key_op_io: io.StringIO):
+    buf = []
+    _skip_spaces(key_op_io)
+    op_tree_node = op_tree
+    while True:
+        char = key_op_io.read(1)
+        if not char:
+            return ''.join(buf)
+        if isinstance(op_tree_node, dict) and char in op_tree_node:
+            op_tree_node = op_tree_node[char]
+            buf.append(char)
+        elif char.isspace() or char.isalnum():
+            key_op_io.seek(max(key_op_io.tell() - 1, 0))
+            if isinstance(op_tree_node, bool) and op_tree_node:
+                return ''.join(buf)
+            elif isinstance(op_tree_node, dict) and '' in op_tree_node and op_tree_node['']:
+                return ''.join(buf)
+            elif buf:
+                raise ValueError(f"{''.join(buf)} is not a valid symbol")
+            else:
+                return ""
+        else:
+            raise ValueError(f"{''.join((*buf, char))} is not a valid symbol")
+
+
+def key_op_depart(key_op: str):
+    class Status(enum.Enum):
+        START = enum.auto()
+        VAR = enum.auto()
+        SYM = enum.auto()
+        EXP = enum.auto()
+
+    key_op_io = io.StringIO(key_op)
+
+    status = Status.START
+    sym = []
+    syms = []
+    for i, char in enumerate(key_op):
+        if char.isspace():
+            if status in (Status.START,):
+                continue
+            else:
+                sym.append(char)
+
+        elif char.isalnum():
+            if status in (Status.START,):
+                status = Status.VAR
+
+        elif char == '#':
+            if status in (Status.START,):
+                status = Status.EXP
+
+        elif char == '<':
+            ...
 
 
 if __name__ == '__main__':
+    if __name__ == '__main__':
+        a = io.StringIO('bba!33-0@#')
+        print(_get_var(a), f"\"{a.read()}\"")
+    exit(1)
+
     print(key_op_depart("id="))
     print(key_op_depart("id,equal"))
     print(key_op_depart("id, equal"))
@@ -211,8 +346,9 @@ if __name__ == '__main__':
     print(key_op_depart("id, like prefix"))
     print(key_op_depart("id!?"))
     print(key_op_depart("id!="))
-
-
+    print(key_op_depart(" id"))
+    print(key_op_depart("  id  "))
+    print(key_op_depart("i d"))
 
 
 def where_builder(conditions: dict, where: WhereAnd):

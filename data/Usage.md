@@ -151,7 +151,7 @@ operators:
 * NULL operator:
   * `{'col': None}` `Where col Is None`
   * `{'col!': None}` `Where col Is Not None` different from `in` operator
-* `,regexp` `,\` regex expression 
+* `,regexp` `\` regex expression 
 * `{string}` literal string, eg: `count(distinct colA)`  
 * `'#or': {...}` or condition, `'#or': {'id': 1, 'name': 'Alice'}` `Where id = 1 Or name = 'Alice'`
 * `'#and': {...}` and condition, `'#and': {'id': 1, 'name': 'Alice'}` `Where id = 1 And name = 'Alice'`

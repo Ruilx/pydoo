@@ -2,6 +2,7 @@
 import datetime
 import enum
 import io
+import typing
 from typing import Union
 
 from src.pydoo.part.where_part import WhereAnd, WhereOr
@@ -152,7 +153,8 @@ op_tree = {
     '-': {
         '>': True,
     },
-    '|': True
+    '|': True,
+    ',': True,
 }
 
 """
@@ -248,6 +250,26 @@ def _skip_spaces(key_op_io: io.StringIO):
         ...
     key_op_io.seek(max(key_op_io.tell() - 1, 0))
 
+def _get_to_close_symbol(key_op_io: io.StringIO, sym: tuple[str, str] = ('{', '}')):
+    if sym.__len__() < 2:
+        raise ValueError("Invalid symbol, expect tuple[begin_str, end_str]")
+    buf = []
+    stack = 0
+    while True:
+        char = key_op_io.read(1)
+        if not char:
+            return ''.join(buf)
+        if char == sym[1]:
+            if stack <= 0:
+                return ''.join((*buf, sym[1]))
+            else:
+                stack -= 1
+                buf.append(char)
+        elif char == sym[0]:
+            stack += 1
+            buf.append(char)
+        else:
+            buf.append(char)
 
 def _get_var(key_op_io: io.StringIO):
     buf = []
@@ -263,7 +285,7 @@ def _get_var(key_op_io: io.StringIO):
             return ''.join(buf)
 
 
-def _get_exp(key_op_io: io.StringIO):
+def _get_sen(key_op_io: io.StringIO):
     buf = []
     _skip_spaces(key_op_io)
     while True:
@@ -276,6 +298,26 @@ def _get_exp(key_op_io: io.StringIO):
             key_op_io.seek(max(key_op_io.tell() - 1, 0))
             return ''.join(buf)
 
+def _get_exp(key_op_io: io.StringIO):
+    buf = []
+    _skip_spaces(key_op_io)
+    first_char = True
+    while True:
+        char = key_op_io.read(1)
+        if not char:
+            return ''.join(buf)
+        if first_char and (char.isalnum() or char == '_'):
+            first_char = False
+            buf.append(char)
+            continue
+        if not first_char and (char.isalnum() or char in '_()\'\"%-*&^+/'):
+            if char == '(':
+                buf.append(_get_to_close_symbol(key_op_io, ('(', ')')))
+            else:
+                buf.append(char)
+        else:
+            key_op_io.seek(max(key_op_io.tell() - 1, 0))
+            return ''.join(buf)
 
 def _get_sym(key_op_io: io.StringIO):
     buf = []
@@ -305,50 +347,144 @@ def _get_sym(key_op_io: io.StringIO):
 def key_op_depart(key_op: str):
     class Status(enum.Enum):
         START = enum.auto()
-        VAR = enum.auto()
-        SYM = enum.auto()
-        EXP = enum.auto()
+        VAR = enum.auto() # variable
+        SEN = enum.auto() # sentence
+        SYM = enum.auto() # symbol
+        EXP = enum.auto() # expression
+        LIT = enum.auto() # literal
 
     key_op_io = io.StringIO(key_op)
 
     status = Status.START
-    sym = []
     syms = []
-    for i, char in enumerate(key_op):
-        if char.isspace():
-            if status in (Status.START,):
-                continue
+    while True:
+        if status == Status.START:
+            sym = _get_sym(key_op_io)
+            if not sym:
+                sym = _get_var(key_op_io)
+                if not sym:
+                    raise ValueError(f"Invalid condition 1: {key_op}")
+                else:
+                    status = Status.VAR
+                    syms.append(sym)
             else:
-                sym.append(char)
+                status = Status.SYM
+                syms.append(sym)
+        elif status == Status.VAR:
+            # 如果已经读到了一个VAR，后续可能是符号，或者结束
+            sym = _get_sym(key_op_io)
+            if not sym:
+                break
+            status = Status.SYM
+            syms.append(sym)
+        elif status == Status.SEN:
+            # 如果已经读到了一个SEN，后续只能是结束
+            _skip_spaces(key_op_io)
+            if key_op_io.tell() != key_op.__len__() -1:
+                raise ValueError(f"Invalid condition 2: {key_op}, tell: {key_op_io.tell()}, len-1: {key_op.__len__() -1}")
+            else:
+                break
 
-        elif char.isalnum():
-            if status in (Status.START,):
-                status = Status.VAR
-
-        elif char == '#':
-            if status in (Status.START,):
-                status = Status.EXP
-
-        elif char == '<':
-            ...
-
+        elif status == Status.EXP:
+            # 如果已经读到了一个EXP，后续可能符号或者结束
+            sym = _get_sym(key_op_io)
+            if not sym:
+                status = Status.SEN
+            else:
+                status = Status.SYM
+                syms.append(sym)
+        elif status == Status.SYM:
+            # 如果已经读到了一个SYM，后续可能是变量，或者表达式，或者结束
+            sym = syms[-1]
+            if sym == ',':
+                sym = _get_sen(key_op_io)
+                if sym:
+                    status = Status.SEN
+                else:
+                    raise ValueError(f"Invalid condition 5: {key_op}")
+            elif sym == '|':
+                sym = _get_var(key_op_io)
+                if sym:
+                    status = Status.VAR
+                    syms.append(sym)
+                else:
+                    raise ValueError(f"Invalid condition 6: {key_op}")
+            elif sym == '->':
+                sym = _get_sen(key_op_io)
+                if sym:
+                    status = Status.SEN
+                    syms.append(sym)
+                else:
+                    raise ValueError(f"Invalid condition 7: {key_op}")
+            elif sym == '/':
+                sym = _get_exp(key_op_io)
+                if sym:
+                    status = Status.EXP
+                    syms.append(sym)
+                else:
+                    raise ValueError(f"Invalid condition 8: {key_op}")
+            elif sym == '#':
+                sym = _get_sen(key_op_io)
+                if sym:
+                    status = Status.SEN
+                    syms.append(sym)
+                else:
+                    raise ValueError(f"Invalid condition 9: {key_op}")
+            elif sym == '{':
+                sym = _get_to_close_symbol(key_op_io)
+                if sym:
+                    status = Status.LIT
+                    syms.append(sym)
+                else:
+                    raise ValueError(f"Invalid condition 10: {key_op}")
+            else:
+                syms.append(sym)
+                break
+        elif status == Status.LIT:
+            # 如果已经读到了一个LIT，后续要找到对应花括号并记录
+            lit = _get_to_close_symbol(key_op_io)
+            if not lit:
+                raise ValueError(f"Invalid condition 3: {key_op}")
+            syms.append(lit)
+        else:
+            raise ValueError(f"Invalid condition 4: {key_op}")
+    return syms
 
 if __name__ == '__main__':
-    if __name__ == '__main__':
-        a = io.StringIO('bba!33-0@#')
-        print(_get_var(a), f"\"{a.read()}\"")
-    exit(1)
+    keyops = [
+        'id',
+        '=',
+        'id,eq',
+        'id,  eq',
+        '  id,  eq',
+        ' id , eq',
+        'id , between  ',
+        'col:',
+        ':col',
+        '?',
+        '!?',
+        '?!',
+        '!!',
+        '\\',
+        'id\\',
+        '#abc',
+        '  #  abc',
+        '->int',
+        '- > int',
+        'col1 | col2 !=',
+        '|col|col2',
+        '  | \\ |',
+        '/STR_TO_DATE(*, \'%Y-%M-%D\')',
+        ' {string}',
+        ' { string } ',
+        'col/FROM_UNIXTIME/DATE',
+    ]
+    for keyop in keyops:
+        try:
+            print(key_op_depart(keyop))
+        except ValueError as e:
+            print(e)
 
-    print(key_op_depart("id="))
-    print(key_op_depart("id,equal"))
-    print(key_op_depart("id, equal"))
-    print(key_op_depart("id , equal"))
-    print(key_op_depart("id, like prefix"))
-    print(key_op_depart("id!?"))
-    print(key_op_depart("id!="))
-    print(key_op_depart(" id"))
-    print(key_op_depart("  id  "))
-    print(key_op_depart("i d"))
 
 
 def where_builder(conditions: dict, where: WhereAnd):

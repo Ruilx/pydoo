@@ -2,7 +2,6 @@
 import datetime
 import enum
 import io
-import typing
 from typing import Union
 
 from src.pydoo.part.where_part import WhereAnd, WhereOr
@@ -122,6 +121,18 @@ def op_regexp(key: str, value: str):
     assert_value(value, str)
     return f"`{key}` Regexp {arrange_value(value)}"
 
+def op_literal(key: str, value: SqlBaseType):
+    ...
+
+
+def op_sharp(key: str, value: SqlBaseType):
+    ...
+
+def op_func(key: str, value: SqlBaseType):
+    ...
+
+def op_cast(key: str, value: SqlBaseType):
+    ...
 
 op_tree = {
     '=': True,
@@ -170,85 +181,85 @@ op有两种设定的方式，分别是符号和英文短语（可以是缩写等
 均表示 `columnA` = 15
 """
 
+op_sym_table = {
+    '=': op_eq,
+    '<': op_lt,
+    '>': op_gt,
+    '<=': op_le,
+    '>=': op_ge,
+    '!=': op_ne,
+    ':': op_in,
+    '?': op_like,
+    '?^': op_like_prefix,
+    '?$': op_like_suffix,
+    '!?': op_not_like,
+    '~': op_between,
+    '!~': op_not_between,
+    '!': op_not_none,
+    '\\': op_regexp,
+    '{': op_literal,
+    '#': op_sharp,
+    '/': op_func,
+    '->': op_cast,
+}
+
 op_table = {
     'eq': op_eq,
     'equal': op_eq,
-    '=': op_eq,
 
     'lt': op_lt,
     'less than': op_le,
-    '<': op_lt,
 
     'gt': op_gt,
     'greater than': op_gt,
-    '>': op_gt,
 
     'le': op_le,
     'less equal': op_le,
-    '<=': op_le,
 
     'ge': op_ge,
     'greater equal': op_ge,
-    '>=': op_ge,
+
+    'ne': op_ne,
+    'not equal': op_ne,
 
     'in': op_in,
-    ':': op_in,
 
     'like': op_like,
-    '?': op_like,
+    'l': op_like,
 
     'like prefix': op_like_prefix,
     'like p': op_like_prefix,
-    '?^': op_like_prefix,
+    'lp': op_like_prefix,
 
     'like suffix': op_like_suffix,
     'like s': op_like_suffix,
-    '?$': op_like_suffix,
+    'ls': op_like_suffix,
 
     'not like': op_not_like,
     'like n': op_not_like,
-    '!?': op_not_like,
+    'nl': op_not_like,
 
     'between': op_between,
-    '~': op_between,
+    'b': op_between,
 
-    'not_between': op_not_between,
-    '!~': op_not_between,
+    'not between': op_not_between,
+    'nb': op_not_between,
 
+    'regexp': op_regexp,
 }
 
 
-# def key_op_depart(key_op: str):
-#     status = 'key'
-#     words = []
-#     word = []
-#     for char in key_op:
-#         if status == 'key':
-#             if char.isalnum():
-#                 word.append(char)
-#             elif char.isspace() and not word:
-#                 continue
-#             else:
-#                 words.append(''.join(word))
-#                 if char != ',' and not char.isspace():
-#                     word = [char]
-#                 else:
-#                     word = []
-#                 status = 'op'
-#         elif status == 'op':
-#             if char.isspace() and not word:
-#                 continue
-#             word.append(char)
-#         else:
-#             raise ValueError(f"Invalid condition: {key_op}")
-#     if word:
-#         words.append(''.join(word))
-#     return words
-
 def _skip_spaces(key_op_io: io.StringIO):
-    while key_op_io.read(1).isspace():
-        ...
+    while True:
+        c = key_op_io.read(1)
+        if not c:
+            return
+        if c.isspace():
+            continue
+        else:
+            break
     key_op_io.seek(max(key_op_io.tell() - 1, 0))
+
 
 def _get_to_close_symbol(key_op_io: io.StringIO, sym: tuple[str, str] = ('{', '}')):
     if sym.__len__() < 2:
@@ -271,6 +282,7 @@ def _get_to_close_symbol(key_op_io: io.StringIO, sym: tuple[str, str] = ('{', '}
         else:
             buf.append(char)
 
+
 def _get_var(key_op_io: io.StringIO):
     buf = []
     _skip_spaces(key_op_io)
@@ -291,12 +303,13 @@ def _get_sen(key_op_io: io.StringIO):
     while True:
         char = key_op_io.read(1)
         if not char:
-            return ''.join(buf)
+            return ''.join(buf).strip()
         if char.isalnum() or char == '_' or char == ' ':
             buf.append(char)
         else:
             key_op_io.seek(max(key_op_io.tell() - 1, 0))
-            return ''.join(buf)
+            return ''.join(buf).strip()
+
 
 def _get_exp(key_op_io: io.StringIO):
     buf = []
@@ -310,14 +323,14 @@ def _get_exp(key_op_io: io.StringIO):
             first_char = False
             buf.append(char)
             continue
-        if not first_char and (char.isalnum() or char in '_()\'\"%-*&^+/'):
+        if not first_char and (char.isalnum() or char in '_()\'\"%-*&^+'):
+            buf.append(char)
             if char == '(':
                 buf.append(_get_to_close_symbol(key_op_io, ('(', ')')))
-            else:
-                buf.append(char)
         else:
             key_op_io.seek(max(key_op_io.tell() - 1, 0))
             return ''.join(buf)
+
 
 def _get_sym(key_op_io: io.StringIO):
     buf = []
@@ -347,11 +360,11 @@ def _get_sym(key_op_io: io.StringIO):
 def key_op_depart(key_op: str):
     class Status(enum.Enum):
         START = enum.auto()
-        VAR = enum.auto() # variable
-        SEN = enum.auto() # sentence
-        SYM = enum.auto() # symbol
-        EXP = enum.auto() # expression
-        LIT = enum.auto() # literal
+        VAR = enum.auto()  # variable
+        SEN = enum.auto()  # sentence
+        SYM = enum.auto()  # symbol
+        EXP = enum.auto()  # expression
+        LIT = enum.auto()  # literal
 
     key_op_io = io.StringIO(key_op)
 
@@ -380,8 +393,8 @@ def key_op_depart(key_op: str):
         elif status == Status.SEN:
             # 如果已经读到了一个SEN，后续只能是结束
             _skip_spaces(key_op_io)
-            if key_op_io.tell() != key_op.__len__() -1:
-                raise ValueError(f"Invalid condition 2: {key_op}, tell: {key_op_io.tell()}, len-1: {key_op.__len__() -1}")
+            if key_op_io.tell() != key_op.__len__():
+                raise ValueError(f"Invalid condition: {key_op} tell: {key_op_io.tell()} len: {key_op.__len__()}")
             else:
                 break
 
@@ -400,6 +413,7 @@ def key_op_depart(key_op: str):
                 sym = _get_sen(key_op_io)
                 if sym:
                     status = Status.SEN
+                    syms.append(sym)
                 else:
                     raise ValueError(f"Invalid condition 5: {key_op}")
             elif sym == '|':
@@ -438,54 +452,18 @@ def key_op_depart(key_op: str):
                 else:
                     raise ValueError(f"Invalid condition 10: {key_op}")
             else:
-                syms.append(sym)
-                break
+                status = Status.SEN
+                continue
         elif status == Status.LIT:
             # 如果已经读到了一个LIT，后续要找到对应花括号并记录
-            lit = _get_to_close_symbol(key_op_io)
-            if not lit:
-                raise ValueError(f"Invalid condition 3: {key_op}")
-            syms.append(lit)
+            status = Status.SEN
+            continue
         else:
             raise ValueError(f"Invalid condition 4: {key_op}")
     return syms
 
-if __name__ == '__main__':
-    keyops = [
-        'id',
-        '=',
-        'id,eq',
-        'id,  eq',
-        '  id,  eq',
-        ' id , eq',
-        'id , between  ',
-        'col:',
-        ':col',
-        '?',
-        '!?',
-        '?!',
-        '!!',
-        '\\',
-        'id\\',
-        '#abc',
-        '  #  abc',
-        '->int',
-        '- > int',
-        'col1 | col2 !=',
-        '|col|col2',
-        '  | \\ |',
-        '/STR_TO_DATE(*, \'%Y-%M-%D\')',
-        ' {string}',
-        ' { string } ',
-        'col/FROM_UNIXTIME/DATE',
-    ]
-    for keyop in keyops:
-        try:
-            print(key_op_depart(keyop))
-        except ValueError as e:
-            print(e)
-
-
+def key_op_analysis(part: list):
+    ...
 
 def where_builder(conditions: dict, where: WhereAnd):
     if not conditions:

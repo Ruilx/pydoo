@@ -133,21 +133,21 @@ state.where(or_cond: WhereOr) -> Statement
 
 operators:
 
-* `,eq` `=` equal
-* `,lt` `<` less than
-* `,gt` `>` greater than
-* `,le` `<=` less than or equal
-* `,ge` `>=` greater than or equal
-* `,ne` `!=` not equal
+* `,eq` `,equal` `=` equal
+* `,lt` `,less than` `<` less than
+* `,gt` `,greater than` `>` greater than
+* `,le` `,less equal` `<=` less than or equal
+* `,ge` `,greater equal` `>=` greater than or equal
+* `,ne` `,not equal` `!=` not equal
 * `,in` `:` in set
   * `{'col:', [1, 2, 3]}` `Where col in (1, 2, 3)`
   * `{'col:', Statement<Select>}` `Where col in (Select ...)`
-* `,like` `?` like '%string%'
-  * `,like prefix` `?^` like 'string%'
-  * `,like suffix` `?$` like '%string'
-* `,not like` `!?` not like '%string%'
-* `,between` `~` between A and B
-* `,not between` `!~` not between A and B
+* ` ,l` `,like` `?` like '%string%'
+  * `,lp` `,like p` `,like prefix` `?^` like 'string%'
+  * `,ls` `,like s` `,like suffix` `?$` like '%string'
+* `,nl` `,not like` `,like n` `!?` not like '%string%'
+* `,b` `,between` `~` between A and B
+* `,nb` `,not between` `!~` not between A and B
 * NULL operator:
   * `{'col': None}` `Where col Is None`
   * `{'col!': None}` `Where col Is Not None` different from `in` operator
@@ -183,8 +183,8 @@ operators:
 
 ```python
 {
-	('id', '<=', 1000),
-	('name', 'in', ['name1', 'name2'])
+	('id', '<='): 1000,
+	('name', 'in'): ['name1', 'name2']
 }
 # Where id <= 1000 And name in ('name1', 'name2')
 ```

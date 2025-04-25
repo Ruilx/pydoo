@@ -462,8 +462,15 @@ def key_op_depart(key_op: str):
             raise ValueError(f"Invalid condition 4: {key_op}")
     return syms
 
-def key_op_analysis(part: list):
-    ...
+def key_op_analysis(parts: list[str]):
+    op = "equal"
+    key = ""
+    for part in parts:
+        if part == '#':
+            ...
+        elif part == '{':
+            ...
+        elif part.isidentifier()
 
 def where_builder(conditions: dict, where: WhereAnd):
     if not conditions:

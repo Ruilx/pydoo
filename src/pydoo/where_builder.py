@@ -465,12 +465,26 @@ def key_op_depart(key_op: str):
 def key_op_analysis(parts: list[str]):
     op = "equal"
     key = ""
+
+    if parts[0] == '#':
+        op = "state"
+        key = parts[1] if parts.__len__() > 1 else ""
+
+    elif parts[0] == '{':
+        op = "literal"
+
+
+
     for part in parts:
         if part == '#':
-            ...
+            op = "state"
         elif part == '{':
-            ...
-        elif part.isidentifier()
+            op = "literal"
+        elif part.isidentifier():
+
+        else:
+            raise ValueError(f"Invalid statement: {''.join(parts)}")
+
 
 def where_builder(conditions: dict, where: WhereAnd):
     if not conditions:

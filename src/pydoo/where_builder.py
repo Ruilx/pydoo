@@ -2,7 +2,7 @@
 import datetime
 import enum
 import io
-from typing import Union
+from typing import Union, List
 
 from src.pydoo.part.where_part import WhereAnd, WhereOr
 from src.pydoo.statement import Statement
@@ -43,95 +43,140 @@ arrange_func = {
 }
 
 
-def op_eq(key: str, value: SqlBaseType):
-    return f"`{key}` = {arrange_value(value)}"
+def op_eq(key: str):
+    return f"`{key}` = {{value}}"
 
 
-def op_lt(key: str, value: SqlBaseType):
-    return f"`{key}` < {arrange_value(value)}"
+def op_lt(key: str):
+    return f"`{key}` < {{value}}"
 
 
-def op_gt(key: str, value: SqlBaseType):
-    return f"`{key}` > {arrange_value(value)}"
+def op_gt(key: str):
+    return f"`{key}` > {{value}}"
 
 
-def op_le(key: str, value: SqlBaseType):
-    return f"`{key}` <= {arrange_value(value)}"
+def op_le(key: str):
+    return f"`{key}` <= {{value}}"
 
 
-def op_ge(key: str, value: SqlBaseType):
-    return f"`{key}` >= {arrange_value(value)}"
+def op_ge(key: str):
+    return f"`{key}` >= {{value}}"
 
 
-def op_ne(key: str, value: SqlBaseType):
-    return f"`{key}` != {arrange_value(value)}"
+def op_ne(key: str):
+    return f"`{key}` != {{value}}"
 
 
-def op_in(key: str, value: list[SqlBaseType] | Statement):
-    if isinstance(value, Statement):
-        return f"`{key}` In ({value.to_sql()})"
-    return f"`{key}` In {arrange_value(value)}"
+def op_in(key: str):
+    return f"`{key}` In {{value}}"
 
 
-def op_like(key: str, value: str):
-    assert_value(value, str, key)
-    return f"`{key}` Like '%{value}%'"
+def op_like(key: str):
+    return f"`{key}` Like '%{{value}}%'"
 
 
-def op_like_prefix(key: str, value: str):
-    assert_value(value, str, key)
-    return f"`{key}` Like '{value}%'"
+def op_like_prefix(key: str):
+    return f"`{key}` Like '{{value}}%'"
 
 
-def op_like_suffix(key: str, value: str):
-    assert_value(value, str, key)
-    return f"`{key}` Like '%{value}'"
+def op_like_suffix(key: str):
+    return f"`{key}` Like '%{{value}}'"
 
 
-def op_not_like(key: str, value: str):
-    assert_value(value, str, key)
-    return f"`{key}` Not Like '%{value}%'"
+def op_not_like(key: str):
+    return f"`{key}` Not Like '%{{value}}%'"
 
 
-def op_between(key: str, value: list[SqlBaseType] | tuple[SqlBaseType, SqlBaseType]):
-    assert_value(value, (list, tuple), key)
-    if value.__len__() != 2:
-        raise ValueError(f"Invalid value type for condition '{key}': between operator need 2 samples.")
-    return f"`{key}` Between {arrange_value(value[0])} And {arrange_value(value[1])}"
+def op_between(key: str):
+    return f"`{key}` Between {{value0}} And {{value1}}"
 
 
-def op_not_between(key: str, value: list[SqlBaseType] | tuple[SqlBaseType, SqlBaseType]):
-    assert_value(value, (list, tuple), key)
-    if value.__len__() != 2:
-        raise ValueError(f"Invalid value type for condition '{key}': not between operator need 2 samples.")
-    return f"`{key}` Not Between {arrange_value(value[0])} And {arrange_value(value[1])}"
+def op_not_between(key: str):
+    return f"`{key}` Not Between {{value0}} And {{value1}}"
 
 
-def op_none(key: str, value: None = None):
-    assert_value(value, None)
+def op_none(key: str):
     return f"`{key}` Is None"
 
 
-def op_not_none(key: str, value: None = None):
-    assert_value(value, None)
+def op_not_none(key: str):
     return f"`{key}` Is Not None"
 
 
-def op_regexp(key: str, value: str):
-    assert_value(value, str)
-    return f"`{key}` Regexp {arrange_value(value)}"
+def op_regexp(key: str):
+    return f"`{key}` Regexp {{value}}"
 
-def op_literal(key: str, value: SqlBaseType):
+def op_literal(key: str):
+    start = 0
+    end = key.__len__()
+    if key.startswith('{'):
+        start = 1
+    if key.endswith('}'):
+        end = -1
+    return key[start:end]
+
+
+def _split_part(part: str, struct: List[Union[str, list]]) -> List[Union[str, list]]:
+    result: List[Union[str, list]] = []
+    # Track quote state
+    in_single = False
+    in_double = False
+    buffer = []
+
+    for ch in part:
+        if ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+
+        if ch == '*' and not in_single and not in_double:
+            # flush buffer
+            if buffer:
+                result.append(''.join(buffer))
+                buffer.clear()
+            # insert struct
+            result.append(struct)
+        else:
+            buffer.append(ch)
+
+    if buffer:
+        result.append(''.join(buffer))
+
+    return result
+
+
+def _flat_arrays(parts: List[Union[str, list]]) -> str:
+    def flatten(item: Union[str, list]) -> str:
+        if isinstance(item, list):
+            return ''.join(flatten(sub) for sub in item)
+        return item
+
+    return ''.join(flatten(p) for p in parts)
+
+def op_func(parts: list[str]):
+    status = "normal"
+    struct = []
+    for index, part in enumerate(parts):
+        if part == '/':
+            status = "func"
+        else:
+            if status == "normal":
+                struct = _flat_arrays(struct)
+                return key_op_analysis([struct, *parts[index + 1:]])
+            elif status == "func":
+                struct = _split_part(part, struct)
+                status = "normal"
+def op_cast(key: str):
     ...
 
 
-def op_sharp(key: str, value: SqlBaseType):
+def op_v_or(value: dict):
     ...
-
-def op_func(key: str, value: SqlBaseType):
+def op_v_and(value: dict):
     ...
-
-def op_cast(key: str, value: SqlBaseType):
+def op_v_exists(value: Statement):
+    ...
+def op_v_not_exists(value: Statement):
     ...
 
 op_tree = {
@@ -198,7 +243,7 @@ op_sym_table = {
     '!': op_not_none,
     '\\': op_regexp,
     '{': op_literal,
-    '#': op_sharp,
+    '#': ...,
     '/': op_func,
     '->': op_cast,
 }
@@ -462,28 +507,53 @@ def key_op_depart(key_op: str):
             raise ValueError(f"Invalid condition 4: {key_op}")
     return syms
 
-def key_op_analysis(parts: list[str]):
-    op = "equal"
-    key = ""
 
+def get_part(parts: list[str], index: int):
+    return parts[index] if parts.__len__() > index else ""
+
+
+def key_op_analysis(parts: list[str]):
+    if not parts:
+        return ""
     if parts[0] == '#':
-        op = "state"
-        key = parts[1] if parts.__len__() > 1 else ""
+        if parts.__len__() != 2:
+            raise ValueError(f"Invalid parts syntax: {parts}")
+        key = get_part(parts, 1)
+        ops = {
+            'or': op_v_or,
+            'and': op_v_and,
+            'exists': op_v_exists,
+            'not exists': op_v_not_exists,
+        }
+        if key not in ops:
+            raise ValueError(f"Invalid state: {key}, expect: {''.join(map(lambda x: f'#{x}', ops.keys()))}")
+        return ops[key]
 
     elif parts[0] == '{':
-        op = "literal"
+        key = get_part(parts, 1)
+        parts[1] = op_literal(key)
+        return key_op_analysis(parts[1:])
 
+    elif parts[0] == '/':
+        return op_func(parts)
 
+    else:
+        key = get_part(parts, 0)
+        op = get_part(parts, 1)
 
-    for part in parts:
-        if part == '#':
-            op = "state"
-        elif part == '{':
-            op = "literal"
-        elif part.isidentifier():
-
+        if op == ',':
+            op = get_part(parts, 2)
+            if op not in op_table:
+                raise ValueError(f"Invalid operator: {op}")
+            key = op_table[op](key)
+        elif not op:
+            key = op_table['eq'](key)
         else:
-            raise ValueError(f"Invalid statement: {''.join(parts)}")
+            if op not in op_sym_table:
+                raise ValueError(f"Invalid operator: {op}")
+            key = op_sym_table[op](key)
+        return key
+
 
 
 def where_builder(conditions: dict, where: WhereAnd):

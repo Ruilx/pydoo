@@ -36,6 +36,7 @@ class TestWhereBuilder(unittest.TestCase):
             (' { string } ', ['{', ' string }']),
             (' {st{r(in}g} ', ['{', 'st{r(in}g}']),
             ('col/FROM_UNIXTIME/DATE', ['col', '/', 'FROM_UNIXTIME', '/', 'DATE']),
+            ('#not exists', ['#', 'not exists']),
         )
 
         for test_case, expect in test_cases:

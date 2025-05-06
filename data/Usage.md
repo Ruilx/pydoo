@@ -155,7 +155,7 @@ operators:
 * `{string}` literal string, eg: `count(distinct colA)`  
 * `'#or': {...}` or condition, `'#or': {'id': 1, 'name': 'Alice'}` `Where id = 1 Or name = 'Alice'`
 * `'#and': {...}` and condition, `'#and': {'id': 1, 'name': 'Alice'}` `Where id = 1 And name = 'Alice'`
-* `'#exist': Statement<Select>` data exists in subquery
+* `'#exists': Statement<Select>` data exists in subquery
 * `'#not exists': Statement<Select>` data not exists in subquery
 * `'/<func>'`: use functions
   * `col/STR_TO_DATE(*, '%Y-%m-%d')` `STR_TO_DATE(col, '%Y-%m-%d')`

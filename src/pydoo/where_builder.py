@@ -12,6 +12,9 @@ SqlDateTimeType = Union[datetime.date | datetime.datetime]
 SqlBaseType = Union[str | SqlNumberType | SqlDateTimeType]
 
 
+class WhereBuilderSyntaxError(Exception):
+    ...
+
 def assert_value(value, types, key: str | None = None):
     if not isinstance(value, types):
         raise ValueError(f"Invalid value type for condition {key.join(('\'',) * 2) if key else ''}: {type(value)}")
@@ -43,6 +46,11 @@ arrange_func = {
 }
 
 
+def key_op_eq(packed: list, part: list):
+    if part.__len__() != 1:
+        raise WhereBuilderSyntaxError(f"Cannot have extra part after 'equal'")
+
+# *****************************************************************************************
 def op_eq(key: str):
     return f"`{key}` = {{value}}"
 
@@ -106,6 +114,7 @@ def op_not_none(key: str):
 def op_regexp(key: str):
     return f"`{key}` Regexp {{value}}"
 
+
 def op_literal(key: str):
     start = 0
     end = key.__len__()
@@ -153,12 +162,14 @@ def _flat_arrays(parts: List[Union[str, list]]) -> str:
 
     return ''.join(flatten(p) for p in parts)
 
+
 def op_func(parts: list[str]):
     status = "normal"
-    struct = []
+    struct = ['{key}']
     for index, part in enumerate(parts):
         if part == '/':
             status = "func"
+            continue
         else:
             if status == "normal":
                 struct = _flat_arrays(struct)
@@ -166,8 +177,16 @@ def op_func(parts: list[str]):
             elif status == "func":
                 struct = _split_part(part, struct)
                 status = "normal"
-def op_cast(key: str):
-    ...
+            else:
+                raise ValueError(f"status error: {part}")
+    return _flat_arrays(struct)
+
+
+def op_cast(parts: list[str]):
+    if get_part(parts, 0) != '->':
+        raise ValueError(f"Invalid part: {parts}")
+    cast = get_part(parts, 1)
+    return key_op_analysis([f"Cast({{key}}, {cast})", parts[2:]])
 
 
 def op_v_or(value: dict):

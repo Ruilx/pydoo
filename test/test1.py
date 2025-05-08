@@ -1,33 +1,4 @@
-import re
-from typing import List, Union
 
-def _split_part(part: str, struct: List[Union[str, list]]) -> List[Union[str, list]]:
-    result: List[Union[str, list]] = []
-    # Track quote state
-    in_single = False
-    in_double = False
-    buffer = []
-
-    for ch in part:
-        if ch == "'" and not in_double:
-            in_single = not in_single
-        elif ch == '"' and not in_single:
-            in_double = not in_double
-
-        if ch == '*' and not in_single and not in_double:
-            # flush buffer
-            if buffer:
-                result.append(''.join(buffer))
-                buffer.clear()
-            # insert struct
-            result.append(struct)
-        else:
-            buffer.append(ch)
-
-    if buffer:
-        result.append(''.join(buffer))
-
-    return result
 
 # Unit tests
 import unittest

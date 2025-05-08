@@ -47,7 +47,7 @@ arrange_func = {
 
 
 def key_op_eq(packed: list, part: list):
-    if part.__len__() != 1:
+    if part.__len__() < 1 or part.__len__() > 2:
         raise WhereBuilderSyntaxError(f"Cannot have extra part after 'equal'")
 
 # *****************************************************************************************

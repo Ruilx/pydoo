@@ -4,6 +4,9 @@ import io
 from typing import Union, List
 
 class Parser(object):
+"""
+Parser是语法分析器，主要分析每个字段的key的
+"""
 
     SHARP_OPS = {
         # 'or': op_or,

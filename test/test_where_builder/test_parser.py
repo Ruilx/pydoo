@@ -80,15 +80,15 @@ class TestParser(unittest.TestCase):
         for test_case in test_cases:
             self.assertEqual(p._op_func(test_case[0]), test_case[1])
 
-    def A(self):
-        test_cases = {
-            'col1': 'col1',
-            'col2/FUNC()': 'FUNC()',
-            'col3/FUNC(*)': 'FUNC(col3)',
-            'col4/FUNC(*)/FUNC()': 'FUNC()',
-            'col5/FUNC(*)/FUNC(*)': 'FUNC(FUNC(col5))',
-            'col6/FUNC(1)': 'FUNC(1)',
-            'col7/FUNC(*, 1)/FUNC(*, *)': "FUNC(FUNC(col7, 1), FUNC(col7, 1))",
-        }
-        for test_cases, test_answer in test_cases.items():
-            self.assertEqual(Parser._op_func())
+    # def A(self):
+    #     test_cases = {
+    #         'col1': 'col1',
+    #         'col2/FUNC()': 'FUNC()',
+    #         'col3/FUNC(*)': 'FUNC(col3)',
+    #         'col4/FUNC(*)/FUNC()': 'FUNC()',
+    #         'col5/FUNC(*)/FUNC(*)': 'FUNC(FUNC(col5))',
+    #         'col6/FUNC(1)': 'FUNC(1)',
+    #         'col7/FUNC(*, 1)/FUNC(*, *)': "FUNC(FUNC(col7, 1), FUNC(col7, 1))",
+    #     }
+    #     for test_cases, test_answer in test_cases.items():
+    #         self.assertEqual(Parser._op_func())

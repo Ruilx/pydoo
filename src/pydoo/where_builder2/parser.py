@@ -6,10 +6,10 @@ from typing import Union, List
 class Parser(object):
 
     SHARP_OPS = {
-        'or': op_or,
-        'and': op_and,
-        'exists': op_exists,
-        'not exists': op_not_exists,
+        # 'or': op_or,
+        # 'and': op_and,
+        # 'exists': op_exists,
+        # 'not exists': op_not_exists,
     }
 
     def __init__(self, parts: list[str]):
@@ -17,29 +17,50 @@ class Parser(object):
         self.packed = []
         self.index = 0
 
+    def _op_literal(self):
+        ...
+
     @staticmethod
     def _split_part(part: str, struct: List[Union[str, list]]) -> List[Union[str, list]]:
         result: List[Union[str, list]] = []
         # Track quote state
         in_single = False
         in_double = False
+        in_escape = False
         buffer = []
 
         for ch in part:
+            if in_escape:
+                buffer.append(ch)
+                in_escape = False
+                continue
+
+            if ch == '\\':
+                if in_single or in_double:
+                    in_escape = True
+                else:
+                    buffer.append(ch)
+                continue
+
             if ch == "'" and not in_double:
                 in_single = not in_single
+                buffer.append(ch)
+                continue
             elif ch == '"' and not in_single:
                 in_double = not in_double
-
-            if ch == '*' and not in_single and not in_double:
-                # flush buffer
+                buffer.append(ch)
+                continue
+            elif ch == '*' and not in_single and not in_double:
                 if buffer:
                     result.append(''.join(buffer))
                     buffer.clear()
-                # insert struct
                 result.append(struct)
+                continue
             else:
                 buffer.append(ch)
+
+        if in_escape:
+            raise ValueError("escaping EOF")
 
         if buffer:
             result.append(''.join(buffer))
@@ -65,13 +86,13 @@ class Parser(object):
             else:
                 if status == "normal":
                     struct = self._flat_arrays(struct)
-                    return ([struct, *parts[index + 1:]])
+                    return [struct, *parts[index + 1:]]
                 elif status == "func":
-                    struct = _split_part(part, struct)
+                    struct = Parser._split_part(part, struct)
                     status = "normal"
                 else:
                     raise ValueError(f"status error: {part}")
-        return _flat_arrays(struct)
+        return Parser._flat_arrays(struct)
 
     def _get_part(self, index: int):
         return self.parts[index] if self.parts.__len__() > index else ""

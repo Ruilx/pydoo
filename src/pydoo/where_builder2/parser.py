@@ -4,9 +4,25 @@ import io
 from typing import Union, List
 
 class Parser(object):
-"""
-Parser是语法分析器，主要分析每个字段的key的
-"""
+    """
+    Parser是语法分析器，主要分析每个字段的key的语法配置
+    Parser之前被已经被Lex分词，从首个分词开始判断对应的模式，分别有：
+    * 字段
+    * 字段,指令
+    * {指令}
+    * #or #and #exists #not exists
+    * 字段/函数流
+    * 字段/函数流,指令
+    * 字段->类型
+    * 表达式|表达式
+    Lex已经将每个key拆分成word，在这里判断每个word是否符合上述要求：
+    1. ‘#’ 开头
+      1.1. 判断是否‘or’，‘and’，‘exist’，‘not exist’
+    2. ‘{’ 开头
+      2.1. 判断‘}’，并将中间的内容全部作为普通字符串
+    3. 字段开头
+      3.1.
+    """
 
     SHARP_OPS = {
         # 'or': op_or,

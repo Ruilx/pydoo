@@ -133,34 +133,35 @@ state.where(or_cond: WhereOr) -> Statement
 
 operators:
 
-* `,eq` `,equal` `=` equal
-* `,lt` `,less than` `<` less than
-* `,gt` `,greater than` `>` greater than
-* `,le` `,less equal` `<=` less than or equal
-* `,ge` `,greater equal` `>=` greater than or equal
-* `,ne` `,not equal` `!=` not equal
-* `,in` `:` in set
+* `col` default style means equal
+* `col,eq` `col,equal` `col=` equal
+* `col,lt` `col,less than` `col<` less than
+* `col,gt` `col,greater than` `col>` greater than
+* `col,le` `col,less equal` `col<=` less than or equal
+* `col,ge` `col,greater equal` `col>=` greater than or equal
+* `col,ne` `col,not equal` `col!=` not equal
+* `col,in` `col:` in set
   * `{'col:', [1, 2, 3]}` `Where col in (1, 2, 3)`
   * `{'col:', Statement<Select>}` `Where col in (Select ...)`
-* ` ,l` `,like` `?` like '%string%'
-  * `,lp` `,like p` `,like prefix` `?^` like 'string%'
-  * `,ls` `,like s` `,like suffix` `?$` like '%string'
-* `,nl` `,not like` `,like n` `!?` not like '%string%'
-* `,b` `,between` `~` between A and B
-* `,nb` `,not between` `!~` not between A and B
+* ` col,l` `col,like` `col?` like '%string%'
+  * `col,lp` `col,like p` `col,like prefix` `col?^` like 'string%'
+  * `col,ls` `col,like s` `col,like suffix` `col?$` like '%string'
+* `col,nl` `col,not like` `col,like n` `col!?` not like '%string%'
+* `col,b` `col,between` `col~` between A and B
+* `col,nb` `col,not between` `col!~` not between A and B
 * NULL operator:
   * `{'col': None}` `Where col Is None`
-  * `{'col!': None}` `Where col Is Not None` different from `in` operator
-* `,regexp` `\` regex expression 
-* `{string}` literal string, eg: `count(distinct colA)`  
+  * `{'col!': None}` `{'col,not': None}` `Where col Is Not None` different from `in` operator
+* `col,regexp` `col\` regex expression 
+* `{string}` literal string, eg: `{count(distinct colA)}` `count(distinct colA)`  
 * `'#or': {...}` or condition, `'#or': {'id': 1, 'name': 'Alice'}` `Where id = 1 Or name = 'Alice'`
 * `'#and': {...}` and condition, `'#and': {'id': 1, 'name': 'Alice'}` `Where id = 1 And name = 'Alice'`
 * `'#exists': Statement<Select>` data exists in subquery
 * `'#not exists': Statement<Select>` data not exists in subquery
-* `'/<func>'`: use functions
+* `'col/<func>'` `col/<func>/<func>/...`: use functions
   * `col/STR_TO_DATE(*, '%Y-%m-%d')` `STR_TO_DATE(col, '%Y-%m-%d')`
   * `col/FROM_UNIXTIME/DATE` `DATE(FROM_UNIXTIME(col))`
-* `->{TYPE}` cast datatype
+* `col->{TYPE}` cast datatype
   * `col->Integer` `CAST(col AS Integer)`
 * `colA|colB` multiple columns with same condition
   * `'colA|colB?': 'Alice'` `colA like '%Alice%' Or colB like '%Alice%'`

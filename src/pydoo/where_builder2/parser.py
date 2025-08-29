@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import enum
 import io
 from typing import Union, List
 
@@ -11,7 +11,9 @@ class Parser(object):
     * 字段,指令
     * {指令}
     * #or #and #exists #not exists
+    * /函数流
     * 字段/函数流
+    * /函数流,指令
     * 字段/函数流,指令
     * 字段->类型
     * 表达式|表达式
@@ -21,8 +23,60 @@ class Parser(object):
     2. ‘{’ 开头
       2.1. 判断‘}’，并将中间的内容全部作为普通字符串
     3. 字段开头
-      3.1.
+      3.1. 字段后符号
+      3.2. 字段后逗号
+        3.2.1. 逗号后指令
+      3.3. 字段后斜杠
+        3.3.1. 函数流
+      3.4. 字段后箭头
+
     """
+
+    OP_MAP = {
+        "": "=",
+        "eq": "=",
+        "equal": "=",
+        "=": "=",
+        "lt": "<",
+        "less than": "<",
+        "<": "<",
+        "gt": ">",
+        "greater than": ">",
+        ">": ">",
+        "le": "<=",
+        "less equal": "<=",
+        "<=": "<=",
+        "ge": ">=",
+        "greater equal": ">=",
+        ">=": ">=",
+        "ne": "!=",
+        "not equal": "!=",
+        "!=": "!=",
+        "in": "IN", ":": "IN",
+        "b": "BETWEEN",
+        "between": "BETWEEN",
+        "~": "BETWEEN",
+        "nb": "NOT BETWEEN",
+        "not between": "NOT BETWEEN",
+        "!~": "NOT BETWEEN",
+        "l": "LIKE",
+        "like": "LIKE",
+        "?": "LIKE",
+        "lp": "LIKE",
+        "like p": "LIKE",
+        "like prefix": "LIKE",
+        "?^": "LIKE",
+        "ls": "LIKE",
+        "like s": "LIKE",
+        "like suffix": "LIKE",
+        "?$": "LIKE",
+        "nl": "NOT LIKE",
+        "not like": "NOT LIKE",
+        "like n": "NOT LIKE",
+        "!?": "NOT LIKE",
+        "regexp": "REGEXP",
+        "\\": "REGEXP",
+    }
 
     SHARP_OPS = {
         # 'or': op_or,
@@ -31,7 +85,22 @@ class Parser(object):
         # 'not exists': op_not_exists,
     }
 
+    class Flag(enum.Enum):
+        FLAG_NULL = enum.auto()
+        FLAG_OR = enum.auto()
+        FLAG_AND = enum.auto()
+        FLAG_EXISTS = enum.auto()
+        FLAG_NOT_EXISTS = enum.auto()
+        FLAG_IS_NULL = enum.auto()
+        FLAG_IS_NOT_NULL = enum.auto()
+        FLAG_BETWEEN = enum.auto()
+        FLAG_LIKE = enum.auto()
+        FLAG_LIKE_PREFIX = enum.auto()
+        FLAG_LIKE_SUFFIX = enum.auto()
+        FLAG_IN = enum.auto()
+
     def __init__(self, parts: list[str]):
+        self.flag =
         self.parts = parts
         self.packed = []
         self.index = 0

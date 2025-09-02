@@ -74,6 +74,9 @@ class TestParser(unittest.TestCase):
             ), (
                 ['col7', '/', 'FUNC(*, 1)', '/', 'FUNC(*, *)'],
                 'FUNC(FUNC(col7, 1), FUNC(col7, 1))',
+            ), (
+                ['col8', '/', 'FUNC(*)', '->', 'Int'],
+                'FUNC(col8)->Int'
             )
         )
         p = Parser([])

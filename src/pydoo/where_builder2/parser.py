@@ -187,11 +187,27 @@ class Parser(object):
 
     def _op_func(self):
         status = 'n'
-        struct = self.packed[-1]
+        struct = [self.packed[-1]]
         self.packed.pop()
-        index = 0
+        index = -1
         while True:
-            token = self._get_part_next():
+            index += 1
+            token = self._get_part_next()
+            if not token:
+                return
+            if token == '/':
+                status = 'f'
+                continue
+            else:
+                if status == 'n':
+                    return Parser._flat_arrays(struct)
+                elif status == 'f':
+                    struct = Parser._split_part(token, struct)
+                    status = 'n'
+                else:
+                    raise ValueError(f"Syntax error: {token}")
+        return Parser._flat_arrays(struct)
+
 
 
 

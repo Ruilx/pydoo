@@ -35,51 +35,57 @@ class Parser(object):
         3.5.1. 闭包处理
     """
 
-    OP_MAP = {
-        "": "=",
+    OP_WORD_MAP = {
         "eq": "=",
         "equal": "=",
-        "=": "=",
         "lt": "<",
         "less than": "<",
-        "<": "<",
         "gt": ">",
         "greater than": ">",
-        ">": ">",
         "le": "<=",
         "less equal": "<=",
-        "<=": "<=",
         "ge": ">=",
         "greater equal": ">=",
-        ">=": ">=",
         "ne": "!=",
         "not equal": "!=",
-        "!=": "!=",
         "in": "In",
-        ":": "In",
         "b": "Between",
         "between": "Between",
-        "~": "Between",
         "nb": "Not Between",
         "not between": "Not Between",
-        "!~": "Not Between",
         "l": "Like",
         "like": "Like",
-        "?": "Like",
         "lp": "Like",
         "like p": "Like",
         "like prefix": "Like",
-        "?^": "Like",
         "ls": "Like",
         "like s": "Like",
         "like suffix": "Like",
-        "?$": "Like",
         "nl": "Not Like",
         "not like": "Not Like",
         "like n": "Not Like",
-        "!?": "Not Like",
         "regexp": "Regexp",
+    }
+
+    OP_SYMBOL_MAP = {
+        "=": "=",
+        "<": "<",
+        ">": ">",
+        "<=": "<=",
+        ">=": ">=",
+        "!=": "!=",
+        ":": "In",
+        "~": "Between",
+        "!~": "Not Between",
+        "?": "Like",
+        "?^": "Like",
+        "?$": "Like",
+        "!?": "Not Like",
         "\\": "Regexp",
+    }
+
+    OP_MAP = {
+
     }
 
     class Remark(enum.Enum):
@@ -87,28 +93,28 @@ class Parser(object):
         Remark 表示在语法分析处理完毕后，值部分需要如何处理和注意的地方。
         通过得到remark，来由调用者判断需要做怎样的值处理和判断。
         """
-        REMARK_NULL = enum.auto()         # 没有需要特殊处理的地方
-        REMARK_OR = enum.auto()           # 被标注OR，值是dict，并对其中对应kv以OR标注
-        REMARK_AND = enum.auto()          # 被标注AND，值是dict，并对其中对应kv以AND标注
-        REMARK_EXISTS = enum.auto()       # 被标注EXISTS，值是Statement
-        REMARK_NOT_EXISTS = enum.auto()   # 被标注NOT EXISTS，值是Statement
-        REMARK_NOT = enum.auto()          # 被标注了NOT，特指NOT NULL的NOT（单叹号'!'）
-        REMARK_IS_NULL = enum.auto()      # 被标注IS NULL，判断值是否为None或者False【未使用】（需要从值反推或者覆盖Key的parser结果）
+        REMARK_NULL = enum.auto()  # 没有需要特殊处理的地方
+        REMARK_OR = enum.auto()  # 被标注OR，值是dict，并对其中对应kv以OR标注
+        REMARK_AND = enum.auto()  # 被标注AND，值是dict，并对其中对应kv以AND标注
+        REMARK_EXISTS = enum.auto()  # 被标注EXISTS，值是Statement
+        REMARK_NOT_EXISTS = enum.auto()  # 被标注NOT EXISTS，值是Statement
+        REMARK_NOT = enum.auto()  # 被标注了NOT，特指NOT NULL的NOT（单叹号'!'）
+        REMARK_IS_NULL = enum.auto()  # 被标注IS NULL，判断值是否为None或者False【未使用】（需要从值反推或者覆盖Key的parser结果）
         REMARK_IS_NOT_NULL = enum.auto()  # 被标注IS NOT NULL，判断值是否为not None或者True【未使用】（需要从值反推或者覆盖Key的parser结果）
-        REMARK_BETWEEN = enum.auto()      # 被标注BETWEEN，值是pair（list[2]或者tuple[V1, V2]）
+        REMARK_BETWEEN = enum.auto()  # 被标注BETWEEN，值是pair（list[2]或者tuple[V1, V2]）
         REMARK_NOT_BETWEEN = enum.auto()  # 被标注NOT BETWEEN，值是pair（list[2]或者tuple[V1, V2]）
-        REMARK_LIKE = enum.auto()         # 被标注LIKE，值是string并且前后加上{WILDCARD SYMBOL}（一般是‘%’）
+        REMARK_LIKE = enum.auto()  # 被标注LIKE，值是string并且前后加上{WILDCARD SYMBOL}（一般是‘%’）
         REMARK_LIKE_PREFIX = enum.auto()  # 被标注LIKE，值是string并且后面加上{WILDCARD SYMBOL}
         REMARK_LIKE_SUFFIX = enum.auto()  # 被标注LIKE，值是string并且前面加上{WILDCARD SYMBOL}
-        REMARK_IN = enum.auto()           # 被标注IN，值是list或者tuple[...]
+        REMARK_IN = enum.auto()  # 被标注IN，值是list或者tuple[...]
 
     SHARP_OPS = {
         'And': lambda: Parser.Remark.REMARK_AND,
         'and': lambda: Parser.Remark.REMARK_AND,
         'AND': lambda: Parser.Remark.REMARK_AND,
-        'Or':  lambda: Parser.Remark.REMARK_OR,
-        'or':  lambda: Parser.Remark.REMARK_OR,
-        'OR':  lambda: Parser.Remark.REMARK_OR,
+        'Or': lambda: Parser.Remark.REMARK_OR,
+        'or': lambda: Parser.Remark.REMARK_OR,
+        'OR': lambda: Parser.Remark.REMARK_OR,
         'Exists': lambda: Parser.Remark.REMARK_EXISTS,
         'exists': lambda: Parser.Remark.REMARK_EXISTS,
         'EXISTS': lambda: Parser.Remark.REMARK_EXISTS,
@@ -117,16 +123,12 @@ class Parser(object):
         'NOT EXISTS': lambda: Parser.Remark.REMARK_NOT_EXISTS,
     }
 
-
     def __init__(self, parts: list[str]):
         self.remark = Parser.Remark.REMARK_NULL
         self.parts = parts  # 待处理的节点
         self.parts_len = parts.__len__()
         self.parts_iter = iter(self.parts)
-        self.packed = []    # 已处理的内容
-
-    def _op_literal(self):
-        ...
+        self.packed = []  # 已处理的内容
 
     @staticmethod
     def _split_part(part: str, struct: List[Union[str, list]]) -> List[Union[str, list]]:
@@ -184,17 +186,18 @@ class Parser(object):
 
         return ''.join(flatten(p) for p in parts)
 
-
     def _op_func(self):
         status = 'n'
-        struct = [self.packed[-1]]
-        self.packed.pop()
+        struct = []
+        if self.packed.__len__() >= 1:
+            struct.append(self.packed[-1])
+            self.packed.pop()
         index = -1
         while True:
             index += 1
             token = self._get_part_next()
             if not token:
-                return
+                break
             if token == '/':
                 status = 'f'
                 continue
@@ -206,29 +209,23 @@ class Parser(object):
                     status = 'n'
                 else:
                     raise ValueError(f"Syntax error: {token}")
+        if status == 'f':
+            raise ValueError("Invalid function syntax, need a function after '/'")
         return Parser._flat_arrays(struct)
 
+    def _op_cast(self):
+        field = self.packed[-1]
+        cast_to = self._get_part_next()
+        if not cast_to:
+            raise ValueError("Invalid cast syntax, need a type after '->'")
+        return f'Cast({field} As {cast_to})'
 
-
-
-
-    def _op_func(self, parts: list[str]):
-        status = "normal"
-        struct = ['{key}']
-        for index, part in enumerate(parts):
-            if part == '/':
-                status = "func"
-                continue
-            else:
-                if status == "normal":
-                    struct = self._flat_arrays(struct)
-                    return [struct, *parts[index + 1:]]
-                elif status == "func":
-                    struct = Parser._split_part(part, struct)
-                    status = "normal"
-                else:
-                    raise ValueError(f"status error: {part}")
-        return Parser._flat_arrays(struct)
+    def _op_operation(self):
+        field = self.packed[-1]
+        operation = self._get_part_next()
+        if not operation:
+            raise ValueError("Invalid operation syntax, need a operation after ','")
+        if operation not in
 
     def _get_part(self, index: int):
         return self.parts[index] if self.parts.__len__() > index else ""
@@ -243,35 +240,58 @@ class Parser(object):
         if not self.parts:
             return
 
-        token = self._get_part_next()
-        if token is None:
-            return
+        while True:
+            token = self._get_part_next()
+            match token:
+                case None:
+                    break
 
-        # Entry1: '#or', '#and', '#exists', '#not exists'
-        if token == '#':
-            if self.packed.__len__() > 0:
-                raise ValueError(f"Invalid parts syntax, sharp '#' not at first: '{self.parts}'")
-            if self.parts_len != 2:
-                raise ValueError(f"Invalid parts syntax, sharp '#' only has 1 argument: '{self.parts}'")
-            op = self._get_part_next()
-            if op not in self.SHARP_OPS:
-                raise ValueError(f"Invalid state: {op}, except: {''.join(map(lambda x: f"#{x.lower()}", set(self.SHARP_OPS.keys())))}")
-            self.remark = self.SHARP_OPS[op]()
-            self.packed.append(op.title())
-            return
+                # Entry 1: "#or", "#and", "#exists", "#not exists"
+                case '#':
+                    if self.packed.__len__() > 0:
+                        raise ValueError(f"Invalid parts syntax, sharp '#' not first word in: '{self.parts}'")
+                    if self.parts_len != 2:
+                        raise ValueError(f"Invalid parts syntax, sharp '#' only has 1 argument: '{self.parts}'")
+                    op = self._get_part_next()
+                    if op not in self.SHARP_OPS:
+                        raise ValueError(f"Invalid state: {op}, except: {''.join(map(lambda x: f"#{x.lower()}", set(self.SHARP_OPS.keys())))}")
+                    self.remark = self.SHARP_OPS[op]()
+                    self.packed.append(op.title())
+                    break
 
-        # Entry2: {literal}
-        if token == '{':
-            if self.packed.__len__() > 0:
-                raise ValueError(f"Invalid parts syntax, literal '{{' not at first: '{self.parts}'")
-            if self.parts_len < 2:
-                raise ValueError(f"Invalid parts syntax, literal '{{' has no argument: '{self.parts}'")
-            literal_string = self._get_part_next()
-            self.packed.append(literal_string[:-1] if literal_string.endswith('}') else literal_string)
-            return
+                # Entry2: "{literal}"
+                case '{':
+                    if self.packed.__len__() > 0:
+                        raise ValueError(f"Invalid parts syntax, literal '{{' not at first in: '{self.parts}'")
+                    if self.parts_len != 2:
+                        raise ValueError(f"Invalid parts syntax, literal '{{' has no argument: '{self.parts}'")
+                    literal_string = self._get_part_next()
+                    self.packed.append(literal_string[:-1] if literal_string.endswith('}') else literal_string)
+                    break
 
-        # Entry3: functions
-        if token == '/':
+                # Entry3: functions
+                case '/':
+                    self.packed.append(self._op_func())
+                    continue
+
+                # Entry4: casting
+                case "->":
+                    if self.packed.__len__() <= 0:
+                        raise ValueError(f"Invalid parts syntax, cast case need a field name in: '{self.parts}'")
+                    self.packed.append(self._op_cast())
+                    continue
+
+                # Entry5: operations
+                case ",":
+                    if self.packed.__len__() <= 0:
+                        raise ValueError(f"Invalid parts syntax, operation need a field in: '{self.parts}'")
+                    self.packed.append(self.op_operation())
+
+                case _:
+                    ...
+
+
 
 
     def parse(self):
+        ...

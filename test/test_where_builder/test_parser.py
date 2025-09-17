@@ -54,34 +54,50 @@ class TestParser(unittest.TestCase):
     def test__op_func(self):
         test_cases = (
             (
-                ['col1'],
-                'col1',
-            ), (
-                ['col2', '/', 'FUNC()'],
+                None,
+                ['/', 'FUNC()'],
                 'FUNC()'
             ), (
-                ['col3', '/', 'FUNC(*)'],
+                'col1',
+                [],
+                'col1',
+            ), (
+                'col2',
+                ['/', 'FUNC()'],
+                'FUNC()'
+            ), (
+                'col3',
+                ['/', 'FUNC(*)'],
                 'FUNC(col3)',
             ), (
-                ['col4', '/', 'FUNC(*)', '/', 'FUNC()'],
+                'col4',
+                ['/', 'FUNC(*)', '/', 'FUNC()'],
                 'FUNC()',
             ), (
-                ['col5', '/', 'FUNC(*)', '/', 'FUNC(*)'],
+                'col5',
+                ['/', 'FUNC(*)', '/', 'FUNC(*)'],
                 'FUNC(FUNC(col5))'
             ), (
-                ['col6', '/', 'FUNC(1)'],
+                'col6',
+                ['/', 'FUNC(1)'],
                 'FUNC(1)',
             ), (
-                ['col7', '/', 'FUNC(*, 1)', '/', 'FUNC(*, *)'],
+                'col7',
+                ['/', 'FUNC(*, 1)', '/', 'FUNC(*, *)'],
                 'FUNC(FUNC(col7, 1), FUNC(col7, 1))',
             ), (
-                ['col8', '/', 'FUNC(*)', '->', 'Int'],
-                'FUNC(col8)->Int'
+                'col8',
+                ['/', 'FUNC(*)', '->', 'Int'],  # '->Int' is cast function not reflect in this function.
+                'FUNC(col8)'
             )
         )
-        p = Parser([])
+
         for test_case in test_cases:
-            self.assertEqual(p._op_func(test_case[0]), test_case[1])
+            print(f"Testing: packed: {test_case[0]}, test: {test_case[1]}, expect: {test_case[2]}")
+            p = Parser(test_case[1])
+            if test_case[0]:
+                p.packed.append(test_case[0])
+            self.assertEqual(p._op_func(), test_case[2])
 
     # def A(self):
     #     test_cases = {

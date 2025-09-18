@@ -299,6 +299,9 @@ class Parser(object):
                                 raise ValueError(f"Invalid parts syntax, expect field at first. '{self.parts}'")
                         self.packed.append(token)
 
+        if self._get_part_next() is not None:
+            raise ValueError(f"Invalid parts syntax, unexpect phase: '{self.parts}'")
+
     @staticmethod
     def parse(lex: list[str]):
         parser = Parser(lex)

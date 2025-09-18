@@ -116,7 +116,11 @@ class TestParser(unittest.TestCase):
     def test_parse(self):
         test_cases = (
             (
-                ""
+                [""],
+                ("", Parser.Remark.REMARK_NULL)
+            ), (
+                ["/FUNC()"],
+                ("FUNC()", Parser.Remark.REMARK_NULL)
             )
 
         )

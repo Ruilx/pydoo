@@ -35,59 +35,6 @@ class Parser(object):
         3.5.1. 闭包处理
     """
 
-    OP_WORD_MAP = {
-        "eq": "=",
-        "equal": "=",
-        "lt": "<",
-        "less than": "<",
-        "gt": ">",
-        "greater than": ">",
-        "le": "<=",
-        "less equal": "<=",
-        "ge": ">=",
-        "greater equal": ">=",
-        "ne": "!=",
-        "not equal": "!=",
-        "in": "In",
-        "b": "Between",
-        "between": "Between",
-        "nb": "Not Between",
-        "not between": "Not Between",
-        "l": "Like",
-        "like": "Like",
-        "lp": "Like",
-        "like p": "Like",
-        "like prefix": "Like",
-        "ls": "Like",
-        "like s": "Like",
-        "like suffix": "Like",
-        "nl": "Not Like",
-        "not like": "Not Like",
-        "like n": "Not Like",
-        "regexp": "Regexp",
-    }
-
-    OP_SYMBOL_MAP = {
-        "=": "=",
-        "<": "<",
-        ">": ">",
-        "<=": "<=",
-        ">=": ">=",
-        "!=": "!=",
-        ":": "In",
-        "~": "Between",
-        "!~": "Not Between",
-        "?": "Like",
-        "?^": "Like",
-        "?$": "Like",
-        "!?": "Not Like",
-        "\\": "Regexp",
-    }
-
-    OP_MAP = {
-
-    }
-
     class Remark(enum.Enum):
         """
         Remark 表示在语法分析处理完毕后，值部分需要如何处理和注意的地方。
@@ -108,19 +55,68 @@ class Parser(object):
         REMARK_LIKE_SUFFIX = enum.auto()  # 被标注LIKE，值是string并且前面加上{WILDCARD SYMBOL}
         REMARK_IN = enum.auto()  # 被标注IN，值是list或者tuple[...]
 
+    OP_WORD_MAP = {
+        "eq": ("=", Remark.REMARK_NULL),
+        "equal": ("=", Remark.REMARK_NULL),
+        "lt": ("<", Remark.REMARK_NULL),
+        "less than": ("<", Remark.REMARK_NULL),
+        "gt": (">", Remark.REMARK_NULL),
+        "greater than": (">", Remark.REMARK_NULL),
+        "le": ("<=", Remark.REMARK_NULL),
+        "less equal": ("<=", Remark.REMARK_NULL),
+        "ge": (">=", Remark.REMARK_NULL),
+        "greater equal": (">=", Remark.REMARK_NULL),
+        "ne": ("!=", Remark.REMARK_NULL),
+        "not equal": ("!=", Remark.REMARK_NULL),
+        "in": ("In", Remark.REMARK_IN),
+        "b": ("Between", Remark.REMARK_BETWEEN),
+        "between": ("Between", Remark.REMARK_BETWEEN),
+        "nb": ("Not Between", Remark.REMARK_NOT_BETWEEN),
+        "not between": ("Not Between", Remark.REMARK_NOT_BETWEEN),
+        "l": ("Like", Remark.REMARK_LIKE),
+        "like": ("Like", Remark.REMARK_LIKE),
+        "lp": ("Like", Remark.REMARK_LIKE_PREFIX),
+        "like p": ("Like", Remark.REMARK_LIKE_PREFIX),
+        "like prefix": ("Like", Remark.REMARK_LIKE_PREFIX),
+        "ls": ("Like", Remark.REMARK_LIKE_SUFFIX),
+        "like s": ("Like", Remark.REMARK_LIKE_SUFFIX),
+        "like suffix": ("Like", Remark.REMARK_LIKE_SUFFIX),
+        "nl": ("Not Like", Remark.REMARK_LIKE),
+        "not like": ("Not Like", Remark.REMARK_LIKE),
+        "like n": ("Not Like", Remark.REMARK_LIKE),
+        "regexp": ("Regexp", Remark.REMARK_NULL),
+    }
+
+    OP_SYMBOL_MAP = {
+        "=": ("=", Remark.REMARK_NULL),
+        "<": ("<", Remark.REMARK_NULL),
+        ">": (">", Remark.REMARK_NULL),
+        "<=": ("<=", Remark.REMARK_NULL),
+        ">=": (">=", Remark.REMARK_NULL),
+        "!=": ("!=", Remark.REMARK_NULL),
+        ":": ("In", Remark.REMARK_IN),
+        "~": ("Between", Remark.REMARK_BETWEEN),
+        "!~": ("Not Between", Remark.REMARK_NOT_BETWEEN),
+        "?": ("Like", Remark.REMARK_LIKE),
+        "?^": ("Like", Remark.REMARK_LIKE_PREFIX),
+        "?$": ("Like", Remark.REMARK_LIKE_SUFFIX),
+        "!?": ("Not Like", Remark.REMARK_LIKE),
+        "\\": ("Regexp", Remark.REMARK_NULL),
+    }
+
     SHARP_OPS = {
-        'And': lambda: Parser.Remark.REMARK_AND,
-        'and': lambda: Parser.Remark.REMARK_AND,
-        'AND': lambda: Parser.Remark.REMARK_AND,
-        'Or': lambda: Parser.Remark.REMARK_OR,
-        'or': lambda: Parser.Remark.REMARK_OR,
-        'OR': lambda: Parser.Remark.REMARK_OR,
-        'Exists': lambda: Parser.Remark.REMARK_EXISTS,
-        'exists': lambda: Parser.Remark.REMARK_EXISTS,
-        'EXISTS': lambda: Parser.Remark.REMARK_EXISTS,
-        'Not Exists': lambda: Parser.Remark.REMARK_NOT_EXISTS,
-        'not exists': lambda: Parser.Remark.REMARK_NOT_EXISTS,
-        'NOT EXISTS': lambda: Parser.Remark.REMARK_NOT_EXISTS,
+        'And': Remark.REMARK_AND,
+        'and': Remark.REMARK_AND,
+        'AND': Remark.REMARK_AND,
+        'Or': Remark.REMARK_OR,
+        'or': Remark.REMARK_OR,
+        'OR': Remark.REMARK_OR,
+        'Exists': Remark.REMARK_EXISTS,
+        'exists': Remark.REMARK_EXISTS,
+        'EXISTS': Remark.REMARK_EXISTS,
+        'Not Exists': Remark.REMARK_NOT_EXISTS,
+        'not exists': Remark.REMARK_NOT_EXISTS,
+        'NOT EXISTS': Remark.REMARK_NOT_EXISTS,
     }
 
     def __init__(self, parts: list[str]):
@@ -225,7 +221,8 @@ class Parser(object):
         operation = self._get_part_next()
         if not operation:
             raise ValueError("Invalid operation syntax, need a operation after ','")
-        if operation not in
+        if operation not in Parser.OP_WORD_MAP:
+            raise ValueError(f"Invalid operation syntax, invalid operation: '{operation}'")
 
     def _get_part(self, index: int):
         return self.parts[index] if self.parts.__len__() > index else ""
@@ -255,7 +252,7 @@ class Parser(object):
                     op = self._get_part_next()
                     if op not in self.SHARP_OPS:
                         raise ValueError(f"Invalid state: {op}, except: {''.join(map(lambda x: f"#{x.lower()}", set(self.SHARP_OPS.keys())))}")
-                    self.remark = self.SHARP_OPS[op]()
+                    self.remark = self.SHARP_OPS[op]() if callable(self.SHARP_OPS[op]) else self.SHARP_OPS[op]
                     self.packed.append(op.title())
                     break
 
@@ -285,13 +282,24 @@ class Parser(object):
                 case ",":
                     if self.packed.__len__() <= 0:
                         raise ValueError(f"Invalid parts syntax, operation need a field in: '{self.parts}'")
-                    self.packed.append(self.op_operation())
+                    self.packed.append(self._op_operation())
 
                 case _:
-                    ...
+                    if token in Parser.OP_SYMBOL_MAP:
+                        # OP_SYMBOL_MAP checks fields
+                        if self.packed.__len__() <= 0:
+                            raise ValueError(f"Invalid parts syntax, need a field in: '{self.parts}'")
+                        operation, self.remark = Parser.OP_SYMBOL_MAP[token]
+                        self.packed.append(operation)
 
+                    else:
+                        # field start
+                        if self.packed.__len__() > 0:
+                            if self.packed[-1] != '|':
+                                raise ValueError(f"Invalid parts syntax, expect field at first. '{self.parts}'")
+                        self.packed.append(token)
 
-
-
-    def parse(self):
-        ...
+    @staticmethod
+    def parse(lex: list[str]):
+        parser = Parser(lex)
+        return parser.op_analysis()

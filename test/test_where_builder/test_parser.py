@@ -111,3 +111,12 @@ class TestParser(unittest.TestCase):
     #     }
     #     for test_cases, test_answer in test_cases.items():
     #         self.assertEqual(Parser._op_func())
+
+
+    def test_parse(self):
+        test_cases = (
+            (
+                ""
+            )
+
+        )

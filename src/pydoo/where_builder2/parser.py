@@ -126,6 +126,12 @@ class Parser(object):
         self.parts_iter = iter(self.parts)
         self.packed = []  # 已处理的内容
 
+    def get_remark(self):
+        return self.remark
+
+    def get_packed(self):
+        return self.packed
+
     @staticmethod
     def _split_part(part: str, struct: List[Union[str, list]]) -> List[Union[str, list]]:
         result: List[Union[str, list]] = []
@@ -183,7 +189,7 @@ class Parser(object):
         return ''.join(flatten(p) for p in parts)
 
     def _op_func(self):
-        status = 'n'
+        status = 'f'
         struct = []
         if self.packed.__len__() >= 1:
             struct.append(self.packed[-1])
@@ -223,6 +229,8 @@ class Parser(object):
             raise ValueError("Invalid operation syntax, need a operation after ','")
         if operation not in Parser.OP_WORD_MAP:
             raise ValueError(f"Invalid operation syntax, invalid operation: '{operation}'")
+        self.remark = Parser.OP_WORD_MAP[operation][1]
+        return Parser.OP_WORD_MAP[operation][0]
 
     def _get_part(self, index: int):
         return self.parts[index] if self.parts.__len__() > index else ""
@@ -283,6 +291,7 @@ class Parser(object):
                     if self.packed.__len__() <= 0:
                         raise ValueError(f"Invalid parts syntax, operation need a field in: '{self.parts}'")
                     self.packed.append(self._op_operation())
+                    continue
 
                 case _:
                     if token in Parser.OP_SYMBOL_MAP:
@@ -305,4 +314,5 @@ class Parser(object):
     @staticmethod
     def parse(lex: list[str]):
         parser = Parser(lex)
-        return parser.op_analysis()
+        parser.op_analysis()
+        return parser

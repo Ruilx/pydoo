@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-
+import sys
 import unittest
 
 from src.pydoo.where_builder2.parser import Parser
+
 
 class TestParser(unittest.TestCase):
     def test__op_literal(self):
@@ -112,15 +113,31 @@ class TestParser(unittest.TestCase):
     #     for test_cases, test_answer in test_cases.items():
     #         self.assertEqual(Parser._op_func())
 
-
     def test_parse(self):
         test_cases = (
             (
                 [""],
                 ("", Parser.Remark.REMARK_NULL)
             ), (
-                ["/FUNC()"],
+                ["/", "FUNC()"],
                 ("FUNC()", Parser.Remark.REMARK_NULL)
+            ), (
+                ["col1"],
+                ("col1", Parser.Remark.REMARK_NULL)
+            ), (
+                ["col1", ",", "eq"],
+                ("col1=", Parser.Remark.REMARK_NULL)
+            ), (
+                ["#", "or"],
+                ("", Parser.Remark.REMARK_OR)
             )
-
         )
+
+        for input, output in test_cases:
+            print(f"Testing: input: {input}, expect output: {output[0]!a}, remark: {output[1]!s}")
+            p = Parser.parse(input)
+            print(p.get_packed(), p.get_remark(), file=sys.stderr)
+            continue
+
+            self.assertEqual(p.get_packed(), output[0])
+            self.assertEqual(p.get_remark(), output[1])

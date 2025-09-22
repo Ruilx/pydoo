@@ -188,8 +188,8 @@ class Parser(object):
 
         return ''.join(flatten(p) for p in parts)
 
-    def _op_func(self):
-        status = 'f'
+    def _op_func(self, since_slash=True):
+        status = 'n' if since_slash else 'f'
         struct = []
         if self.packed.__len__() >= 1:
             struct.append(self.packed[-1])

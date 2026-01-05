@@ -2,7 +2,7 @@
 
 import unittest
 
-from src.pydoo.where_builder2.lex import Lex
+from pydoo.where_builder2.lex import Lex
 
 class TestLex(unittest.TestCase):
     def test_key_op_depart(self):

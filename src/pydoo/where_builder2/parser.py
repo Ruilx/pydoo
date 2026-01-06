@@ -85,6 +85,8 @@ class Parser(object):
         "not like": ("Not Like", Remark.REMARK_LIKE),
         "like n": ("Not Like", Remark.REMARK_LIKE),
         "regexp": ("Regexp", Remark.REMARK_NULL),
+        "n": (None, Remark.REMARK_NOT),
+        "not": (None, Remark.REMARK_NOT),
     }
 
     OP_SYMBOL_MAP = {
@@ -102,6 +104,7 @@ class Parser(object):
         "?$": ("Like", Remark.REMARK_LIKE_SUFFIX),
         "!?": ("Not Like", Remark.REMARK_LIKE),
         "\\": ("Regexp", Remark.REMARK_NULL),
+        "!": (None, Remark.REMARK_NOT),
     }
 
     SHARP_OPS = {
@@ -207,7 +210,8 @@ class Parser(object):
                 if status == 'n':
                     return Parser._flat_arrays(struct)
                 elif status == 'f':
-                    struct = Parser._split_part(token, struct)
+                    ## TODO: check!
+                    self.packed.append(Parser._split_part(token, struct))
                     status = 'n'
                 else:
                     raise ValueError(f"Syntax error: {token}")
@@ -261,7 +265,7 @@ class Parser(object):
                     if op not in self.SHARP_OPS:
                         raise ValueError(f"Invalid state: {op}, except: {''.join(map(lambda x: f"#{x.lower()}", set(self.SHARP_OPS.keys())))}")
                     self.remark = self.SHARP_OPS[op]() if callable(self.SHARP_OPS[op]) else self.SHARP_OPS[op]
-                    self.packed.append(op.title())
+                    #self.packed.append(op.title())
                     break
 
                 # Entry2: "{literal}"
@@ -276,7 +280,7 @@ class Parser(object):
 
                 # Entry3: functions
                 case '/':
-                    self.packed.append(self._op_func())
+                    self.packed.append(self._op_func(since_slash=False))
                     continue
 
                 # Entry4: casting
@@ -290,7 +294,9 @@ class Parser(object):
                 case ",":
                     if self.packed.__len__() <= 0:
                         raise ValueError(f"Invalid parts syntax, operation need a field in: '{self.parts}'")
-                    self.packed.append(self._op_operation())
+                    op = self._op_operation()
+                    if op is not None:
+                        self.packed.append(op)
                     continue
 
                 case _:
@@ -299,7 +305,8 @@ class Parser(object):
                         if self.packed.__len__() <= 0:
                             raise ValueError(f"Invalid parts syntax, need a field in: '{self.parts}'")
                         operation, self.remark = Parser.OP_SYMBOL_MAP[token]
-                        self.packed.append(operation)
+                        if operation is not None:
+                            self.packed.append(operation)
 
                     else:
                         # field start
@@ -316,3 +323,7 @@ class Parser(object):
         parser = Parser(lex)
         parser.op_analysis()
         return parser
+
+if __name__ == "__main__":
+    p = Parser.parse(["/", "FUNC()"])
+    print(p.packed)

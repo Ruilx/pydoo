@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import unittest
+from xmlrpc.client import PARSE_ERROR
 
 from src.pydoo.where_builder2.parser import Parser
 
@@ -114,30 +115,236 @@ class TestParser(unittest.TestCase):
     #         self.assertEqual(Parser._op_func())
 
     def test_parse(self):
+        # test_cases = (
+        #     (
+        #         [""],
+        #         ([""], Parser.Remark.REMARK_NULL)
+        #     ), (
+        #         ["/", "FUNC()"],
+        #         (["FUNC()"], Parser.Remark.REMARK_NULL)
+        #     ), (
+        #         ["col1"],
+        #         (["col1"], Parser.Remark.REMARK_NULL)
+        #     ), (
+        #         ["col1", ",", "eq"],
+        #         (["col1", "="], Parser.Remark.REMARK_NULL)
+        #     ), (
+        #         ["#", "or"],
+        #         (["Or"], Parser.Remark.REMARK_OR)
+        #     )
+        # )
+
         test_cases = (
             (
                 [""],
-                ("", Parser.Remark.REMARK_NULL)
-            ), (
-                ["/", "FUNC()"],
-                ("FUNC()", Parser.Remark.REMARK_NULL)
-            ), (
-                ["col1"],
-                ("col1", Parser.Remark.REMARK_NULL)
-            ), (
-                ["col1", ",", "eq"],
-                ("col1=", Parser.Remark.REMARK_NULL)
-            ), (
+                ([""], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col"],
+                (["col"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", ",", "eq"],
+                (["col", "="], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", ",", "equal"],
+                (["col", "="], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", "="],
+                (["col", "="], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", ",", "lt"],
+                (["col", "<"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", ",", "less than"],
+                (["col", "<"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", "<"],
+                (["col", "<"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", ",", "gt"],
+                (["col", ">"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", ",", "greater than"],
+                (["col", ">"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", ">"],
+                (["col", ">"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", ",", "le"],
+                (["col", "<="], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", ",", "less equal"],
+                (["col", "<="], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", "<="],
+                (["col", "<="], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", ",", "ge"],
+                (["col", ">="], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", ",", "greater equal"],
+                (["col", ">="], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", ">="],
+                (["col", ">="], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", ",", "ne"],
+                (["col", "!="], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", ",", "not equal"],
+                (["col", "!="], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", "!="],
+                (["col", "!="], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", ",", "in"],
+                (["col", "In"], Parser.Remark.REMARK_IN),
+            ),(
+                ["col", ":"],
+                (["col", "In"], Parser.Remark.REMARK_IN),
+            ),(
+                ["col", ",", "l"],
+                (["col", "Like"], Parser.Remark.REMARK_LIKE),
+            ),(
+                ["col", ",", "like"],
+                (["col", "Like"], Parser.Remark.REMARK_LIKE),
+            ),(
+                ["col", "?"],
+                (["col", "Like"], Parser.Remark.REMARK_LIKE),
+            ),(
+                ["col", ",", "lp"],
+                (["col", "Like"], Parser.Remark.REMARK_LIKE_PREFIX),
+            ),(
+                ["col", ",", "like p"],
+                (["col", "Like"], Parser.Remark.REMARK_LIKE_PREFIX),
+            ),(
+                ["col", ",", "like prefix"],
+                (["col", "Like"], Parser.Remark.REMARK_LIKE_PREFIX),
+            ),(
+                ["col", "?^"],
+                (["col", "Like"], Parser.Remark.REMARK_LIKE_PREFIX),
+            ),(
+                ["col", ",", "ls"],
+                (["col", "Like"], Parser.Remark.REMARK_LIKE_SUFFIX),
+            ),(
+                ["col", ",", "like s"],
+                (["col", "Like"], Parser.Remark.REMARK_LIKE_SUFFIX),
+            ),(
+                ["col", ",", "like suffix"],
+                (["col", "Like"], Parser.Remark.REMARK_LIKE_SUFFIX),
+            ),(
+                ["col", "?$"],
+                (["col", "Like"], Parser.Remark.REMARK_LIKE_SUFFIX),
+            ),(
+                ["col", ",", "nl"],
+                (["col", "Not Like"], Parser.Remark.REMARK_LIKE),
+            ),(
+                ["col", ",", "not like"],
+                (["col", "Not Like"], Parser.Remark.REMARK_LIKE),
+            ),(
+                ["col", ",", "like n"],
+                (["col", "Not Like"], Parser.Remark.REMARK_LIKE),
+            ),(
+                ["col", "!?"],
+                (["col", "Not Like"], Parser.Remark.REMARK_LIKE),
+            ),(
+                ["col", ",", "b"],
+                (["col", "Between"], Parser.Remark.REMARK_BETWEEN),
+            ),(
+                ["col", ",", "between"],
+                (["col", "Between"], Parser.Remark.REMARK_BETWEEN),
+            ),(
+                ["col", "~"],
+                (["col", "Between"], Parser.Remark.REMARK_BETWEEN),
+            ),(
+                ["col", ",", "nb"],
+                (["col", "Not Between"], Parser.Remark.REMARK_NOT_BETWEEN),
+            ),(
+                ["col", ",", "not between"],
+                (["col", "Not Between"], Parser.Remark.REMARK_NOT_BETWEEN),
+            ),(
+                ["col", "!~"],
+                (["col", "Not Between"], Parser.Remark.REMARK_NOT_BETWEEN),
+            ),(
+                ["col", ",", "not"],
+                (["col"], Parser.Remark.REMARK_NOT),
+            ),(
+                ["col", ",", "n"],
+                (["col"], Parser.Remark.REMARK_NOT),
+            ),(
+                ["col", "!"],
+                (["col"], Parser.Remark.REMARK_NOT),
+            ),(
+                ["col", ",", "regexp"],
+                (["col", "Regexp"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", "\\"],
+                (["col", "Regexp"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["{", "string}"],
+                (["string"], Parser.Remark.REMARK_NULL),
+            ),(
                 ["#", "or"],
-                ("", Parser.Remark.REMARK_OR)
+                ([], Parser.Remark.REMARK_OR),
+            ),(
+                ["#", "and"],
+                ([], Parser.Remark.REMARK_AND),
+            ),(
+                ["#", "exists"],
+                ([], Parser.Remark.REMARK_EXISTS),
+            ),(
+                ["#", "not exists"],
+                ([], Parser.Remark.REMARK_NOT_EXISTS),
+            ),(
+                ["/", "F()", "/", "G()"],
+                (["G(F())"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", "/", "FUNC1"],
+                (["FUNC1(col1)"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", "/", "FUNC1(*)"],
+                (["FUNC1(col)"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", "/", "FUNC1(1, *)"],
+                (["FUNC1(1, col)"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", "/", "FUNC1(*, 1, 2)"],
+                (["FUNC1(col, 1, 2)"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["/", "FUNC1"],
+                (["FUNC1()"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["/", "FUNC1", "/", "FUNC2"],
+                (["FUNC2(FUNC1())"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["/", "FUNC1", "/", "FUNC2(*, 1)"],
+                (["FUNC2(FUNC1(), 1)"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["/", "FUNC1", "/", "FUNC2(1)"],
+                (["FUNC2(1)"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", "/", "FUNC1(\"*\")"],
+                (["FUNC1(\"*\")"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", "/", "FUNC1(\"*\", *)"],
+                (["FUNC1(\"*\", col)"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", "/", "FUNC1(*1)"],
+                (["FUNC1(col1)"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", "/", "FUNC1", "/", "FUNC2", "/", "FUNC3", "/", "FUNC4"],
+                (["FUNC4(FUNC3(FUNC2(FUNC1(col))))"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["{", "str{i(n}g}"],
+                (["str{i(n}g"], Parser.Remark.REMARK_NULL),
+            ),(
+                ["col", "->", "Integer"],
+                (["Cast(col as Integer)"], Parser.Remark.REMARK_NULL),
             )
         )
 
         for input, output in test_cases:
             print(f"Testing: input: {input}, expect output: {output[0]!a}, remark: {output[1]!s}")
             p = Parser.parse(input)
-            print(p.get_packed(), p.get_remark(), file=sys.stderr)
-            continue
 
-            self.assertEqual(p.get_packed(), output[0])
-            self.assertEqual(p.get_remark(), output[1])
+            self.assertEqual(output[0], p.get_packed())
+            self.assertEqual(output[1], p.get_remark())

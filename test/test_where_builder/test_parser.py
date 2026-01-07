@@ -115,25 +115,6 @@ class TestParser(unittest.TestCase):
     #         self.assertEqual(Parser._op_func())
 
     def test_parse(self):
-        # test_cases = (
-        #     (
-        #         [""],
-        #         ([""], Parser.Remark.REMARK_NULL)
-        #     ), (
-        #         ["/", "FUNC()"],
-        #         (["FUNC()"], Parser.Remark.REMARK_NULL)
-        #     ), (
-        #         ["col1"],
-        #         (["col1"], Parser.Remark.REMARK_NULL)
-        #     ), (
-        #         ["col1", ",", "eq"],
-        #         (["col1", "="], Parser.Remark.REMARK_NULL)
-        #     ), (
-        #         ["#", "or"],
-        #         (["Or"], Parser.Remark.REMARK_OR)
-        #     )
-        # )
-
         test_cases = (
             (
                 [""],
@@ -295,11 +276,11 @@ class TestParser(unittest.TestCase):
                 ["#", "not exists"],
                 ([], Parser.Remark.REMARK_NOT_EXISTS),
             ),(
-                ["/", "F()", "/", "G()"],
+                ["/", "F()", "/", "G(*)"],
                 (["G(F())"], Parser.Remark.REMARK_NULL),
             ),(
                 ["col", "/", "FUNC1"],
-                (["FUNC1(col1)"], Parser.Remark.REMARK_NULL),
+                (["FUNC1(col)"], Parser.Remark.REMARK_NULL),
             ),(
                 ["col", "/", "FUNC1(*)"],
                 (["FUNC1(col)"], Parser.Remark.REMARK_NULL),
@@ -338,7 +319,23 @@ class TestParser(unittest.TestCase):
                 (["str{i(n}g"], Parser.Remark.REMARK_NULL),
             ),(
                 ["col", "->", "Integer"],
-                (["Cast(col as Integer)"], Parser.Remark.REMARK_NULL),
+                (["Cast(col As Integer)"], Parser.Remark.REMARK_NULL),
+            )
+        )
+
+        for input, output in test_cases:
+            print(f"Testing: input: {input}, expect output: {output[0]!a}, remark: {output[1]!s}")
+            p = Parser.parse(input)
+
+            self.assertEqual(output[0], p.get_packed())
+            self.assertEqual(output[1], p.get_remark())
+
+
+    def test_parse_bad(self):
+        test_cases = (
+            (
+                [""],
+                ,
             )
         )
 

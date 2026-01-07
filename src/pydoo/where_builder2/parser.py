@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 import enum
-import io
+from itertools import chain
 from typing import Union, List
 
 
 class Parser(object):
     """
     Parser是语法分析器，主要分析每个字段的key的语法配置
-    Parser之前被已经被Lex分词，从首个分词开始判断对应的模式，分别有：
+    Parser之前被Lex分词，从首个分词开始判断对应的模式，分别有：
     * 字段
     * 字段,指令
     * {指令}
@@ -124,10 +124,10 @@ class Parser(object):
 
     def __init__(self, parts: list[str]):
         self.remark = Parser.Remark.REMARK_NULL
-        self.parts = parts  # 待处理的节点
+        self.parts = parts
         self.parts_len = parts.__len__()
         self.parts_iter = iter(self.parts)
-        self.packed = []  # 已处理的内容
+        self.packed = []
 
     def get_remark(self):
         return self.remark
@@ -191,40 +191,88 @@ class Parser(object):
 
         return ''.join(flatten(p) for p in parts)
 
+    def _unget(self, tok: str | None):
+        """Push back one token into the iterator for lookahead management."""
+        if tok is None:
+            return
+        self.parts_iter = chain([tok], self.parts_iter)
+
     def _op_func(self, since_slash=True):
-        status = 'n' if since_slash else 'f'
-        struct = []
-        if self.packed.__len__() >= 1:
-            struct.append(self.packed[-1])
-            self.packed.pop()
-        index = -1
-        while True:
-            index += 1
-            token = self._get_part_next()
-            if not token:
-                break
-            if token == '/':
-                status = 'f'
-                continue
-            else:
-                if status == 'n':
-                    return Parser._flat_arrays(struct)
-                elif status == 'f':
-                    ## TODO: check!
-                    self.packed.append(Parser._split_part(token, struct))
-                    status = 'n'
-                else:
-                    raise ValueError(f"Syntax error: {token}")
-        if status == 'f':
+        """
+        (AI generated function (GPT-5-1x))
+        Handle function chaining syntax starting with '/'.
+        Rules:
+        - If there is a previous packed expression, it can be injected into '*' placeholders (outside quotes)
+          or used as the first argument when parentheses are missing.
+        - If there is no previous expression:
+          - The first function becomes a zero-arg call: FUNC()
+          - If '*' (outside quotes) appears, raise syntax error.
+        - Consume a chain of '/FUNC' segments; do not mutate self.packed; caller appends.
+        - Do not consume non-'/' lookahead tokens; push them back.
+        """
+
+        # Fetch previous expression if any
+        current = self.packed.pop() if self.packed else None
+
+        def _apply(func_tok: str, prev_expr: str | None) -> str:
+            has_paren = '(' in func_tok
+            if has_paren:
+                if prev_expr is None:
+                    # No previous expression; ensure no placeholder needed
+                    if '*' in func_tok:
+                        parts = self._split_part(func_tok, [])
+                        if any(isinstance(p, list) for p in parts):
+                            raise ValueError("Invalid function syntax, no previous expression to replace '*'")
+                        return self._flat_arrays(parts)
+                    return func_tok
+                parts = self._split_part(func_tok, [prev_expr])
+                return self._flat_arrays(parts)
+            # no parentheses
+            return f"{func_tok}({prev_expr})" if prev_expr is not None else f"{func_tok}()"
+
+        # First function token
+        tok = self._get_part_next()
+        if tok is None:
+            # If there is a previous expression and nothing to consume, return it directly
+            if current is not None:
+                return current
             raise ValueError("Invalid function syntax, need a function after '/'")
-        return Parser._flat_arrays(struct)
+        if since_slash and tok == '/':
+            func_tok = self._get_part_next()
+            if func_tok is None:
+                raise ValueError("Invalid function syntax, need a function after '/'")
+        else:
+            # tok itself is function token when not strictly after '/'
+            func_tok = tok
+
+        current = _apply(func_tok, current)
+
+        # Chain subsequent '/FUNC'
+        while True:
+            look = self._get_part_next()
+            if look == '/':
+                next_func = self._get_part_next()
+                if next_func is None:
+                    raise ValueError("Invalid function syntax, need a function after '/'")
+                current = _apply(next_func, current)
+                continue
+            self._unget(look)
+            break
+        return current
 
     def _op_cast(self):
+        """
+        (AI generated function (GPT-5-1x))
+        Cast(field as Type) using previous packed field and next type token.
+        """
         field = self.packed[-1]
         cast_to = self._get_part_next()
         if not cast_to:
             raise ValueError("Invalid cast syntax, need a type after '->'")
-        return f'Cast({field} As {cast_to})'
+        # Build Cast with lowercase 'as' to match expected style
+        parts = self._split_part(f"Cast(* As {cast_to}", [field])
+        built = self._flat_arrays(parts) + ")"
+        return built
 
     def _op_operation(self):
         field = self.packed[-1]
@@ -287,7 +335,8 @@ class Parser(object):
                 case "->":
                     if self.packed.__len__() <= 0:
                         raise ValueError(f"Invalid parts syntax, cast case need a field name in: '{self.parts}'")
-                    self.packed.append(self._op_cast())
+                    # replace previous field with cast result
+                    self.packed[-1] = self._op_cast()
                     continue
 
                 # Entry5: operations

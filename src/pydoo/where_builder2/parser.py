@@ -311,7 +311,7 @@ class Parser(object):
                         raise ValueError(f"Invalid parts syntax, sharp '#' only has 1 argument: '{self.parts}'")
                     op = self._get_part_next()
                     if op not in self.SHARP_OPS:
-                        raise ValueError(f"Invalid state: {op}, except: {''.join(map(lambda x: f"#{x.lower()}", set(self.SHARP_OPS.keys())))}")
+                        raise ValueError(f"Invalid state: {op}, except: {''.join(map(lambda x: f"#{x.lower()}", set(map(lambda x: x.lower(), self.SHARP_OPS.keys()))))}")
                     self.remark = self.SHARP_OPS[op]() if callable(self.SHARP_OPS[op]) else self.SHARP_OPS[op]
                     #self.packed.append(op.title())
                     break

@@ -334,14 +334,32 @@ class TestParser(unittest.TestCase):
     def test_parse_bad(self):
         test_cases = (
             (
-                [""],
-                ,
+                ["col", "eq"], # 缺少逗号
+                ValueError(),
+            ),(
+                ["col", ",", "="], # 多出逗号
+                ValueError(),
+            ),(
+                ["#", "abc"], # 井号后命令不支持
+                ValueError(),
+            ),(
+                ["col", "#", "and"], # 语法错误
+                ValueError(),
+            ),(
+                ["="], # 缺少描述符
+                ValueError(),
+            ),(
+                ["/"], # 缺少函数
+                ValueError(),
             )
+
         )
 
-        for input, output in test_cases:
-            print(f"Testing: input: {input}, expect output: {output[0]!a}, remark: {output[1]!s}")
-            p = Parser.parse(input)
-
-            self.assertEqual(output[0], p.get_packed())
-            self.assertEqual(output[1], p.get_remark())
+        for input, expect in test_cases:
+            print(f"Testing: input: {input}, expect output: {expect!a}")
+            with self.assertRaises(expect.__class__):
+                try:
+                    Parser.parse(input)
+                except BaseException as e:
+                    print(e)
+                    raise e
